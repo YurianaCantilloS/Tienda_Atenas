@@ -1,15 +1,58 @@
 /* TOAST (notificación propia, no nativa del navegador) */
 .toast {
-  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px);
-  background: linear-gradient(135deg, var(--rosa-dark), var(--lila-dark));
-  color: #fff; padding: 12px 22px; border-radius: 50px; font-size: 14px;
-  font-weight: 500; font-family: var(--font-texto); z-index: 999;
-  transition: transform 0.1s ease; white-space: nowrap;
-  display: flex; align-items: center; gap: 8px;
-  box-shadow: 0 10px 30px rgba(155,95,192,0.35);
+  position: fixed; bottom: 26px; left: 50%;
+  transform: translateX(-50%) translateY(140%) scale(.96);
+  background: var(--blanco); color: var(--negro);
+  padding: 12px 18px 12px 13px; border-radius: 16px;
+  font-size: 14px; font-weight: 500; font-family: var(--font-texto);
+  line-height: 1.4; text-align: left;
+  z-index: 1200; max-width: min(92vw, 440px);
+  display: flex; align-items: center; gap: 12px;
+  border: 1px solid var(--gris-30);
+  border-left: 4px solid var(--lila-dark);
+  box-shadow: 0 18px 46px rgba(58,42,69,0.22), 0 3px 10px rgba(58,42,69,0.10);
+  opacity: 0; pointer-events: none;
+  transition: transform .34s cubic-bezier(.2,.9,.3,1.25), opacity .22s ease;
 }
-.toast .icon-svg { width: 16px; height: 16px; flex-shrink: 0; }
-.toast.show { transform: translateX(-50%) translateY(0); }
+.toast.show { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
+
+.toast .toast-ico {
+  width: 34px; height: 34px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--lila-bg); color: var(--lila-dark);
+}
+.toast.show .toast-ico { animation: toastPop .42s ease; }
+.toast .toast-ico .icon-svg { width: 19px; height: 19px; }
+.toast .toast-msg { min-width: 0; }
+@keyframes toastPop { 0% { transform: scale(.4); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+.toast.t-check   { border-left-color: var(--verde); }
+.toast.t-check .toast-ico   { background: #e7f9ee; color: var(--verde); }
+.toast.t-warn    { border-left-color: var(--amarillo); }
+.toast.t-warn .toast-ico    { background: #fef3e0; color: var(--amarillo); }
+.toast.t-error   { border-left-color: var(--rojo); }
+.toast.t-error .toast-ico   { background: #fdecec; color: var(--rojo); }
+.toast.t-sparkle { border-left-color: var(--rosa-dark); }
+.toast.t-sparkle .toast-ico { background: var(--rosa-bg); color: var(--rosa-dark); }
+.toast.t-cart    { border-left-color: var(--lila-dark); }
+.toast.t-cart .toast-ico    { background: var(--lila-bg); color: var(--lila-dark); }
+
+@media (max-width: 480px) {
+  .toast { bottom: 16px; font-size: 13px; padding: 11px 15px 11px 11px; }
+  .toast .toast-ico { width: 30px; height: 30px; }
+}
+
+/* AVISO CENTRADO (regla de compra al por mayor) */
+.aviso-box { max-width: 430px; text-align: center; padding: 34px 26px 26px; }
+.aviso-box h3 { justify-content: center; margin-bottom: 10px; }
+.aviso-ico {
+  width: 64px; height: 64px; margin: 0 auto 16px; border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  background: #fef3e0; color: var(--amarillo);
+}
+.aviso-ico .icon-svg { width: 34px; height: 34px; }
+.aviso-texto { font-size: 14.5px; color: var(--gris-60); line-height: 1.55; margin: 0 0 22px; }
+.aviso-box .btn-modal-agregar { margin-top: 2px; }
 
 #btn-factura-flotante {
   position: fixed; bottom: 80px; right: 20px; z-index: 999;

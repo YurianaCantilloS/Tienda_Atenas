@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"></head>
+<body>
+<script>
+function log(m){ var l=document.getElementById('log'); if(l) l.textContent += '\n'+m; else setTimeout(()=>log(m),30); }
+window.supabase = { createClient: () => ({ from: () => ({}) }) };
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="js/config.js"></script>
+<script>
+function formatCOP(n){ return '$' + Number(n||0).toLocaleString('es-CO'); }
+function esc(s){ return String(s==null?'':s); }
+function aviso(m,t){ log('AVISO '+(t||'')+': '+m); }
+let PRODUCTOS = [];
+</script>
+<script src="js/factura-erp.js"></script>
+<div id="log"></div>
+<script>
+(async () => {
+  try {
+    const resultado = await construirFacturaPDF({
+      titulo: 'Comprobante de Pedido', fecha: '9 de octubre de 2026',
+      cliente: 'Maria Perez', telefono: '3184346975', metodoPago: 'Efectivo',
+      numero: '000123',
+      items: [
+        { nombre:'Labial Rojo', cantidad:2, precio:15000, subtotal:30000, foto:'' },
+        { nombre:'Shampoo', cantidad:1, precio:25000, subtotal:25000, foto:'' }
+      ],
+      descuento: 0, domicilio: 6000, total: 61000
+    });
+    log('OK blob.size=' + resultado.blob.size);
+  } catch(e) { log('THROW: ' + (e && e.message || e)); }
+  log('FIN');
+})();
+</script>
+</body></html>

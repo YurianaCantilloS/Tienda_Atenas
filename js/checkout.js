@@ -10,6 +10,13 @@ let BARRIOS = [];
 let CIUDADES = [];
 let nombreCiudadActual = '';
 
+/* Regla "por mayor": si el carrito lleva algún producto por mayor, el pedido
+   se permite si hay un producto al detal por más de $30.000, o si el total
+   alcanza $50.000, o si el pedido lleva 10 unidades o más. */
+const MAYOR_MIN_UNIDADES = 10;
+const MAYOR_MIN_MONTO = 50000;
+const DETAL_EXENTO_MONTO = 30000;
+
 /* ── BARRIOS ── */
 async function initBarrios() {
   BARRIOS = await fetchBarrios();
@@ -122,6 +129,13 @@ function actualizarVisibilidadPago() {
 /* ── CHECKOUT ── */
 function abrirCheckout() {
   if (carrito.length === 0) return;
+  /* Validación de compra al por mayor: se revisa al pulsar "Finalizar pedido"
+     (aquí sale el mensaje), no al enviar por WhatsApp. */
+  const itemMayorInvalido = revisarCompraMayor();
+  if (itemMayorInvalido) {
+    abrirAvisoMayor(`Compra al por mayor: el mínimo es ${MAYOR_MIN_UNIDADES} unidades o un monto superior a ${formatCOP(MAYOR_MIN_MONTO)}.`);
+    return;
+  }
   cerrarCarrito();
   /* resetear campos al abrir */
   nombreBarrioActual = '';
@@ -137,6 +151,39 @@ function abrirCheckout() {
 
 function cerrarCheckout() {
   document.getElementById('checkout-modal').classList.remove('open');
+}
+
+/* Devuelve el primer producto por mayor si la compra NO cumple el mínimo
+   (para avisar). Devuelve null si se puede continuar. */
+function revisarCompraMayor() {
+  const porMayor = carrito.filter(i => i.tipo_venta === 'mayor');
+  if (!porMayor.length) return null;
+
+  const subtotalDetal = carrito
+    .filter(i => i.tipo_venta !== 'mayor')
+    .reduce((a, i) => a + Number(i.precio) * i.cantidad, 0);
+  if (subtotalDetal > DETAL_EXENTO_MONTO) return null;
+
+  const totalUnidades = carrito.reduce((a, i) => a + i.cantidad, 0);
+  const montoTotal = carrito.reduce((a, i) => a + Number(i.precio) * i.cantidad, 0);
+  if (montoTotal >= MAYOR_MIN_MONTO || totalUnidades >= MAYOR_MIN_UNIDADES) return null;
+
+  return porMayor[0];
+}
+
+/* Aviso centrado (por ejemplo, la regla de compra al por mayor). Se muestra
+   al pulsar "Finalizar pedido" y no deja continuar con el pedido. */
+function abrirAvisoMayor(msg) {
+  const el = document.getElementById('aviso-mayor');
+  if (!el) { showToast(msg, 'warn'); return; }
+  const texto = document.getElementById('aviso-mayor-texto');
+  if (texto) texto.textContent = msg;
+  el.classList.add('open');
+}
+
+function cerrarAvisoMayor() {
+  const el = document.getElementById('aviso-mayor');
+  if (el) el.classList.remove('open');
 }
 
 function totalConDomicilio() {
@@ -173,13 +220,21 @@ async function enviarPedido() {
   const datos = validarFormulario();
   if (!datos) return;
 
-  const { nombreCompleto, tel, ciudad, direccion, cedula } = datos;
   const { subtotal, descuento, domicilio, total } = totalConDomicilio();
   const pagoLabel = {
     efectivo: 'Efectivo',
     transferencia: 'Transferencia',
     contraentrega: 'Contra Entrega'
   }[metodoPago] || metodoPago;
+
+  /* Primero se guarda en el panel (para no perderlo si cierra la pestaña),
+     y el código del pedido se incluye en el mensaje de WhatsApp. */
+  const codigo = await guardarPedido(
+    datos,
+    [...carrito],
+    { subtotal, descuento, domicilio, total },
+    { metodoPago: pagoLabel }
+  );
 
   const e1 = String.fromCodePoint(0x1FA75);
   const e2 = String.fromCodePoint(0x1F4E6);
@@ -195,11 +250,12 @@ async function enviarPedido() {
     ``,
     `Estos son mis datos:`,
     ``,
-    `${pt} Nombre: ${nombreCompleto}`,
-    `${pt} Tel\u00e9fono: ${tel}`,
-    cedula ? `${pt} C\u00e9dula: ${cedula}` : null,
-    `${pt} Ciudad: ${ciudad}`,
-    `${pt} Direcci\u00f3n: ${direccion}`,
+    ...(codigo ? [`${pt} N\u00famero de pedido: *${codigo}*`] : []),
+    `${pt} Nombre: ${datos.nombreCompleto}`,
+    `${pt} Tel\u00e9fono: ${datos.tel}`,
+    datos.cedula ? `${pt} C\u00e9dula: ${datos.cedula}` : null,
+    `${pt} Ciudad: ${datos.ciudad}`,
+    `${pt} Direcci\u00f3n: ${datos.direccion}`,
     `${pt} M\u00e9todo de pago: ${pagoLabel}`,
     !ubicacionCartagena ? `${pt} El env\u00edo se cotiza despu\u00e9s.` : null,
     metodoPago === 'contraentrega' ? `${pt} El env\u00edo se paga anticipado.` : null,
@@ -218,11 +274,12 @@ async function enviarPedido() {
     `Quedo atenta a la Confirmaci\u00f3n ${e3}`,
   ].filter(l => l !== null).join('\n');
 
-  window.open(`https://wa.me/${NEGOCIO.whatsapp}?text=${encodeURIComponent(lineas)}`, '_blank');
+  window.open(`https://api.whatsapp.com/send?phone=${NEGOCIO.whatsapp}&text=${encodeURIComponent(lineas)}`, '_blank');
   cerrarCheckout();
 
   window._ultimoPedido = {
-    datosCliente: { nombre: nombreCompleto, tel, ciudad, direccion, cedula, pagoLabel },
+    codigo,
+    datosCliente: { nombre: datos.nombreCompleto, tel: datos.tel, ciudad: datos.ciudad, direccion: datos.direccion, cedula: datos.cedula, pagoLabel },
     items: [...carrito],
     totales: { subtotal, descuento, domicilio, total }
   };
@@ -245,9 +302,9 @@ function mostrarBotonFactura() {
 
 async function descargarFacturaPedido() {
   if (!window._ultimoPedido) return;
-  const { datosCliente, items, totales } = window._ultimoPedido;
+  const { codigo, datosCliente, items, totales } = window._ultimoPedido;
   try {
-    const pdfData = await generarFacturaPDF(datosCliente, items, totales);
+    const pdfData = await generarFacturaPDF(datosCliente, items, totales, codigo);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(pdfData.blob);
     a.download = pdfData.nombreArchivo;
@@ -270,30 +327,33 @@ function validarFormulario() {
   if (!nombre) { showToast('Falta tu nombre', 'warn'); return null; }
   if (!tel) { showToast('Falta tu WhatsApp', 'warn'); return null; }
 
-  let ciudad, direccion, cedula = '';
+let ciudad, direccion, cedula = '', barrio = '', referencia = '';
 
   if (ubicacionCartagena) {
     if (!nombreBarrioActual) { showToast('Selecciona tu barrio', 'warn'); return null; }
     const dir = document.getElementById('ch-direccion').value.trim();
-    const referencia = document.getElementById('ch-referencia').value.trim();
-    if (!dir) { showToast('Falta la direcci\u00f3n', 'warn'); return null; }
+    referencia = document.getElementById('ch-referencia').value.trim();
+    if (!dir) { showToast('Falta la dirección', 'warn'); return null; }
     ciudad = 'Cartagena';
+    barrio = nombreBarrioActual;
     direccion = `${nombreBarrioActual}, ${dir}${referencia ? ' (Punto de Referencia: ' + referencia + ')' : ''}`;
   } else {
     if (!nombreCiudadActual) { showToast('Selecciona tu ciudad', 'warn'); return null; }
     const dirFuera = document.getElementById('ch-direccion-fuera').value.trim();
     cedula = document.getElementById('ch-cedula').value.trim();
-    if (!dirFuera) { showToast('Falta la direcci\u00f3n', 'warn'); return null; }
-    if (!cedula) { showToast('Falta tu n\u00famero de c\u00e9dula', 'warn'); return null; }
+    if (!dirFuera) { showToast('Falta la dirección', 'warn'); return null; }
+    if (!cedula) { showToast('Falta tu número de cédula', 'warn'); return null; }
     ciudad = nombreCiudadActual;
+    barrio = nombreCiudadActual;
     direccion = dirFuera;
   }
 
   return {
     nombreCompleto: `${nombre} ${apellido}`.trim(),
-    tel, ciudad, direccion, cedula
+    tel, ciudad, direccion, cedula, barrio, referencia
   };
 }
+
 function toggleBarrioDropdown() {
   document.getElementById('barrio-select-list').classList.toggle('open');
   document.getElementById('barrio-search').focus();

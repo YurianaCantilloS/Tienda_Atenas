@@ -75,6 +75,7 @@ h1, h2, h3, h4, .titulo-gordito { font-family: var(--font-titulo); font-weight: 
   height: auto;
   display: block;
   object-fit: cover;
+  aspect-ratio: 1600 / 550;
 }
 .hero-eyebrow {
   font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--rosa-dark);
@@ -99,7 +100,7 @@ h1, h2, h3, h4, .titulo-gordito { font-family: var(--font-titulo); font-weight: 
 .cupon-bar-track span { font-size: 12px; }
 .cupon-bar-track {
   display: inline-flex; gap: 60px;
-  animation: ticker 20s linear infinite;
+  animation: ticker 20s linear infinite reverse;
 }
 .cupon-bar-track span {
   display: inline-flex; align-items: center; gap: 8px;
@@ -113,8 +114,12 @@ h1, h2, h3, h4, .titulo-gordito { font-family: var(--font-titulo); font-weight: 
   100% { transform: translateX(-50%); }
 }
 
-.section-title { padding: 24px 24px 8px; font-size: 22px; font-weight: 700; color: var(--negro); }
-.section-sub { padding: 0 24px 16px; font-size: 13px; color: var(--gris-60); }
+.section-title { padding: 24px 44px 8px; font-size: 22px; font-weight: 700; color: var(--negro); }
+.section-sub { padding: 0 44px 16px; font-size: 13px; color: var(--gris-60); }
+@media (max-width: 600px) {
+  .section-title { padding: 20px 16px 6px; }
+  .section-sub { padding: 0 16px 14px; }
+}
 
 /* FOOTER */
 .footer {
@@ -124,3 +129,16 @@ h1, h2, h3, h4, .titulo-gordito { font-family: var(--font-titulo); font-weight: 
 .footer strong { color: var(--rosa); font-family: var(--font-titulo); }
 .footer-row { display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap; }
 .footer .icon-svg { width: 13px; height: 13px; vertical-align: -2px; }
+.footer #pie-instagram { color: var(--rosa); }
+
+/* AVISO DEL FRENTE (lo edita el admin) */
+.aviso-tienda {
+  display: none;
+  padding: 11px 18px;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  overflow-x: hidden;
+  white-space: normal;
+}

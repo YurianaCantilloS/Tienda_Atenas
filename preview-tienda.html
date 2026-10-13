@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Así se ve tu tienda</title>
+<link rel="icon" type="image/png" href="assets/Logo.png">
+<link rel="stylesheet" href="css/variables.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/productos.css">
+<link rel="stylesheet" href="css/componentes.css">
+<style>
+  /* Vive dentro del marco del panel: el scroll es del iframe */
+  html, body { background: #fff; }
+  body { cursor: default; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-logo">
+    <div class="logo-circle"><img src="assets/Logo.png" alt="Atenas Style Shop"></div>
+    <div>
+      <h1>Atenas Style Shop</h1>
+      <span>Bodega Mayorsita de Belleza</span>
+    </div>
+  </div>
+  <button class="cart-btn">
+    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+    Carrito
+    <span class="cart-count">0</span>
+  </button>
+</header>
+
+
+<div class="cupon-bar">
+  <div class="cupon-bar-track">
+    <span>Por compras superiores a $250.000 recibe el 10% de descuento</span>
+    <span>Envíos con pago contra entrega</span>
+    <span>Por compras superiores a $250.000 recibe el 10% de descuento</span>
+    <span>Envíos a toda Colombia</span>
+  </div>
+</div>
+<!-- AVISO (lo edita el admin en Apariencia) -->
+<div id="aviso-tienda" class="aviso-tienda"></div>
+
+<!-- HERO -->
+<section class="hero" id="hero">
+  <img class="hero-banner-img" id="hero-banner" src="assets/banner-atenas.png" alt="Atenas Style Shop">
+</section>
+
+<!-- BÚSQUEDA -->
+<div class="busqueda-wrap">
+  <svg class="icon-svg" viewBox="0 0 512 512" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><g><path d="M332.998,291.918c52.2-71.895,45.941-173.338-18.834-238.123c-71.736-71.728-188.468-71.728-260.195,0c-71.746,71.745-71.746,188.458,0,260.204c64.775,64.775,166.218,71.034,238.104,18.844l14.222,14.203l40.916-40.916L332.998,291.918z M278.488,278.333c-52.144,52.134-136.699,52.144-188.852,0c-52.152-52.153-52.152-136.717,0-188.861c52.154-52.144,136.708-52.144,188.852,0C330.64,141.616,330.64,226.18,278.488,278.333z"/><path d="M109.303,119.216c-27.078,34.788-29.324,82.646-6.756,119.614c2.142,3.489,6.709,4.603,10.208,2.46c3.49-2.142,4.594-6.709,2.462-10.198v0.008c-19.387-31.7-17.45-72.962,5.782-102.771c2.526-3.228,1.946-7.898-1.292-10.405C116.48,115.399,111.811,115.979,109.303,119.216z"/><path d="M501.499,438.591L363.341,315.178l-47.98,47.98l123.403,138.168c12.548,16.234,35.144,13.848,55.447-6.456C514.505,474.576,517.743,451.138,501.499,438.591z"/></g></svg>
+  <input type="text" placeholder="Buscar producto...">
+</div>
+
+<!-- FILTROS -->
+<div class="filtros" id="filtros"></div>
+
+<!-- PRODUCTOS -->
+<div class="productos-grid" id="productos-grid"></div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <strong id="pie-nombre">Atenas Style Shop</strong><br>
+  <p id="pie-frase" style="margin:6px 0;font-size:12.5px;opacity:.85;">Elegancia que se siente, estilo que se vive.</p>
+  <div class="footer-row">
+    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s7-7.5 7-12a7 7 0 0 0-14 0c0 4.5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg> <span id="pie-ciudad">Cartagena, Colombia</span>
+    &nbsp;|&nbsp;
+    <svg class="icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/></svg> <span id="pie-telefono">318 434 6975</span>
+  </div>
+  <span id="pie-instagram">@atenas.style_ctg</span>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="js/iconos.js"></script>
+<script src="js/utils.js"></script>
+<script>
+/* ============================================================
+   VISTA PREVIA REAL DE LA TIENDA
+   Mismo CSS y misma estructura que index.html.
+   El panel (admin.js) le manda los cambios con aplicarPreview().
+   ============================================================ */
+
+const APARIENCIA_DEF = {
+  banner_url: '', banner_activo: true,
+  aviso_texto: '', aviso_activo: true, aviso_color: 'lila',
+  pie_frase: 'Elegancia que se siente, estilo que se vive.',
+  pie_instagram: '@atenas.style_ctg',
+  negocio_nombre: '', negocio_ciudad: '', negocio_telefono: '',
+  negocio_whatsapp: '', negocio_instagram: '',
+  orden_tienda: 'destacados'
+};
+
+function aplicarPreview(datos) {
+  const a = { ...APARIENCIA_DEF, ...(datos || {}) };
+
+  /* ── BANNER ── */
+  const hero = document.getElementById('hero');
+  const img  = document.getElementById('hero-banner');
+  if (hero && img) {
+    if (!a.banner_url || a.banner_activo === false) {
+      hero.style.display = 'none';
+      img.removeAttribute('src');
+      img.style.display = 'none';
+    } else {
+      hero.style.display = '';
+      img.src = a.banner_url;
+      img.style.display = '';
+      img.onerror = function () { hero.style.display = 'none'; };
+    }
+  }
+
+  /* ── AVISO DE ARRIBA (recuadro propio, no el anuncio que se rueda) ── */
+  const box = document.getElementById('aviso-tienda');
+  if (box) {
+    const texto = String(a.aviso_texto || '').trim();
+    if (!texto || a.aviso_activo === false) {
+      box.style.display = 'none';
+      box.innerHTML = '';
+    } else {
+      box.innerHTML = texto.replace(/\n/g,'<br>');
+      box.style.display = 'block';
+    }
+  }
+
+  /* ── CONTACTO EN EL PIE ── */
+  const set = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt || ''; };
+  set('pie-nombre', a.negocio_nombre);
+  set('pie-ciudad', a.negocio_ciudad);
+  set('pie-frase', a.pie_frase);
+  set('pie-instagram', a.negocio_instagram || a.pie_instagram);
+  const tel = String(a.negocio_telefono || '').replace(/\D/g, '');
+  if (tel) {
+    set('pie-telefono', tel.length === 10 ? tel.replace(/(\d{3})(\d{3})(\d{4})/, '$1 $2 $3') : tel);
+  }
+}
+
+/* El banner original vuelve a estar disponible si se apaga el interruptor */
+const _img = document.getElementById('hero-banner');
+if (_img) _img.dataset.original = _img.getAttribute('src');
+
+/* Los productos de la vista previa los pinta el panel; aquí no hay
+   datos todavía, así que dejamos la rejilla vacía sin romper nada. */
+function pintarProductosTienda() {}
+
+/* El panel manda los cambios por postMessage: así funciona aunque
+   esté abierto con doble clic (file://), donde el navegador no deja
+   que entre al iframe. El listener se registra ANTES de pintar para
+   no perder ningún mensaje. */
+window.addEventListener('message', e => {
+  const d = e.data;
+  if (!d || typeof d !== 'object') return;
+  if (d.tipo === 'apariencia') aplicarPreview(d.cfg);
+  else if (d.tipo === 'pintar') pintarProductosTienda();
+});
+
+/* Arranca con los productos que ya tenga el panel (si aún no llegaron,
+   el panel los manda al terminar de cargar) */
+pintarProductosTienda();
+</script>
+</body>
+</html>

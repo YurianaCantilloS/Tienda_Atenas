@@ -16,7 +16,7 @@ function agregarAlCarrito(prod, cantidad) {
     carrito.push({ ...prod, cantidad });
   }
   actualizarCarrito();
-  showToast(`${prod.nombre} agregado`, 'check');
+  showToast(`${prod.nombre} agregado al carrito`, 'cart');
 }
 
 function quitarDelCarrito(id) {

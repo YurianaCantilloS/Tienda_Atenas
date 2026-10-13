@@ -14,5 +14,5 @@ const NEGOCIO = {
   telefono: '318 434 6975',
   whatsapp: '573184346975',
   instagram: '@atenas.style_ctg',
-  logo: 'assets/logo.png',
+  logo: 'assets/Logo.png',
 };

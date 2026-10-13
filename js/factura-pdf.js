@@ -30,7 +30,7 @@ async function getLogoBase64() {
   return _logoBase64Cache;
 }
 
-async function generarFacturaPDF(cliente, items, totales) {
+async function generarFacturaPDF(cliente, items, totales, numero) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: [380, 560] });
   const centerX = 190;
@@ -153,7 +153,11 @@ async function generarFacturaPDF(cliente, items, totales) {
   doc.setTextColor(...rosaDark);
   doc.text(NEGOCIO.instagram, centerX, y, { align: 'center' });
 
-  const nombreArchivo = `Factura-${cliente.nombre.replace(/\s+/g, '-')}-${Date.now()}.pdf`;
+  const num = String(numero || '').replace(/\D/g, '') || '0';
+  const fechaArchivo = new Date()
+    .toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    .replace(/\//g, '-');
+  const nombreArchivo = `Factura #${num} - ${cliente.nombre.replace(/[\\/]/g, '-')} - ${fechaArchivo}.pdf`;
   return { blob: doc.output('blob'), nombreArchivo };
 }
 
