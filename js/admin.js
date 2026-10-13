@@ -108,6 +108,136 @@ function claveFecha(iso) {
 
 /* ── Login ──────────────────────────────────── */
 
+/* Muestra u oculta la contraseña escrita (el ojito). */
+function toggleClave(btn) {
+  const input = btn.parentElement.querySelector('input');
+  const mostrar = input.type === 'password';
+  input.type = mostrar ? 'text' : 'password';
+  btn.classList.toggle('ver', mostrar);
+  btn.title = mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña';
+  btn.setAttribute('aria-label', btn.title);
+}
+
+/* ── Recuperar contraseña (correo con código) ── */
+let _recEmail = '';
+
+/* Muestra el formulario de recuperación (paso 1: correo). */
+function mostrarRecuperar(desdeEnlace) {
+  document.getElementById('login-normal').style.display = 'none';
+  document.getElementById('recuperar').style.display = 'block';
+  document.getElementById('rec-codigo-error').innerHTML = '';
+  document.getElementById('rec-error').innerHTML = '';
+  document.getElementById('rec-aviso').innerHTML = '';
+
+  /* Si llegó desde el enlace del correo ya hay sesión: solo pide la nueva clave. */
+  if (desdeEnlace) {
+    document.getElementById('rec-paso1').style.display = 'none';
+    document.getElementById('rec-paso2').style.display = 'block';
+    document.getElementById('rec-codigo').closest('.field').style.display = 'none';
+    return;
+  }
+
+  document.getElementById('rec-paso1').style.display = 'block';
+  document.getElementById('rec-paso2').style.display = 'none';
+  document.getElementById('rec-codigo').closest('.field').style.display = 'block';
+  const em = document.getElementById('login-email').value.trim();
+  if (em) document.getElementById('rec-email').value = em;
+  setTimeout(() => document.getElementById('rec-email').focus(), 60);
+}
+
+function cancelarRecuperar(e) {
+  if (e) e.preventDefault();
+  document.getElementById('recuperar').style.display = 'none';
+  document.getElementById('login-normal').style.display = 'block';
+  document.getElementById('login-error').innerHTML = '';
+}
+
+/* Traduce el error de límite de correos de Supabase. */
+function mensajeCorreo(m) {
+  if (/rate limit/i.test(m)) return 'Se enviaron muchos correos seguidos. Espera unos minutos e inténtalo otra vez.';
+  return m;
+}
+
+/* Paso 1: envía el correo con el código. */
+async function enviarCodigo(e) {
+  if (e) e.preventDefault();
+  const err = document.getElementById('rec-codigo-error');
+  const email = document.getElementById('rec-email').value.trim();
+  if (!email) {
+    err.innerHTML = '<div class="aviso aviso-rojo">Escribe tu correo.</div>';
+    document.getElementById('rec-email').focus();
+    return;
+  }
+  err.innerHTML = '';
+  const btn = document.querySelector('#rec-paso1 .btn');
+  const txt = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Enviando...';
+  try {
+    const { error } = await sb.auth.resetPasswordForEmail(email);
+    if (error) {
+      err.innerHTML = `<div class="aviso aviso-rojo">${esc(mensajeCorreo(error.message))}</div>`;
+      return;
+    }
+    _recEmail = email;
+    document.getElementById('rec-paso1').style.display = 'none';
+    document.getElementById('rec-paso2').style.display = 'block';
+    document.getElementById('rec-codigo').closest('.field').style.display = 'block';
+    document.getElementById('rec-aviso').innerHTML = `<div class="aviso aviso-verde">Te enviamos un código a <strong>${esc(email)}</strong>. Revisa tu correo (y spam).</div>`;
+    setTimeout(() => document.getElementById('rec-codigo').focus(), 60);
+  } catch (ex) {
+    err.innerHTML = `<div class="aviso aviso-rojo">${esc(ex?.message || 'No se pudo enviar el correo')}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = txt;
+  }
+}
+
+/* Paso 2: verifica el código y guarda la nueva contraseña. */
+async function confirmarNuevaClave(e) {
+  if (e) e.preventDefault();
+  const err = document.getElementById('rec-error');
+  const codigo = document.getElementById('rec-codigo').value.trim();
+  const p1 = document.getElementById('rec-pass').value;
+  const p2 = document.getElementById('rec-pass2').value;
+  const email = _recEmail || document.getElementById('rec-email').value.trim();
+  err.innerHTML = '';
+  if (p1.length < 6) {
+    err.innerHTML = '<div class="aviso aviso-rojo">La contraseña debe tener al menos 6 caracteres.</div>';
+    return;
+  }
+  if (p1 !== p2) {
+    err.innerHTML = '<div class="aviso aviso-rojo">Las contraseñas no coinciden.</div>';
+    return;
+  }
+  const btn = document.querySelector('#rec-paso2 .btn');
+  const txt = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  try {
+    const { data } = await sb.auth.getSession();
+    if (!data.session) {
+      if (!codigo) {
+        err.innerHTML = '<div class="aviso aviso-rojo">Escribe el código que llegó a tu correo.</div>';
+        return;
+      }
+      const { error } = await sb.auth.verifyOtp({ email, token: codigo, type: 'recovery' });
+      if (error) {
+        err.innerHTML = `<div class="aviso aviso-rojo">${esc(/invalid|expired|incorrect|token/i.test(error.message) ? 'Código incorrecto o vencido.' : error.message)}</div>`;
+        return;
+      }
+    }
+    const { error: e2 } = await sb.auth.updateUser({ password: p1 });
+    if (e2) {
+      err.innerHTML = `<div class="aviso aviso-rojo">${esc(e2.message)}</div>`;
+      return;
+    }
+    err.innerHTML = '<div class="aviso aviso-verde">¡Contraseña actualizada! Entrando al panel...</div>';
+    setTimeout(() => revisarSesion(), 900);
+  } catch (ex) {
+    err.innerHTML = `<div class="aviso aviso-rojo">${esc(ex?.message || 'No se pudo guardar la contraseña')}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = txt;
+  }
+}
+
 async function iniciarSesion(e) {
   e.preventDefault();
 
@@ -1556,6 +1686,11 @@ function modalCerrar() {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') modalCerrar();
+});
+
+/* Si el usuario llega desde el enlace del correo, Supabase avisa aquí. */
+sb.auth.onAuthStateChange((event) => {
+  if (event === 'PASSWORD_RECOVERY') mostrarRecuperar(true);
 });
 
 revisarSesion();

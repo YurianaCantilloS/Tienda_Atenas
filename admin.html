@@ -19,20 +19,72 @@
     <h1>Atenas Style Shop</h1>
     <p class="sub">Panel de administración</p>
 
-    <div class="field" style="text-align:left;">
-      <label>Correo</label>
-      <input type="email" id="login-email" placeholder="tucorreo@ejemplo.com" required autocomplete="username">
-    </div>
-    <div class="field" style="text-align:left;">
-      <label>Contraseña</label>
-      <input type="password" id="login-pass" placeholder="••••••••" required autocomplete="current-password">
+    <div id="login-normal">
+      <div class="field" style="text-align:left;">
+        <label>Correo</label>
+        <input type="email" id="login-email" placeholder="tucorreo@ejemplo.com" required autocomplete="username">
+      </div>
+      <div class="field" style="text-align:left;">
+        <label>Contraseña</label>
+        <div class="pass-wrap">
+          <input type="password" id="login-pass" placeholder="••••••••" required autocomplete="current-password">
+          <button type="button" class="pass-ojo" onclick="toggleClave(this)" aria-label="Mostrar contraseña" title="Mostrar contraseña">
+            <svg class="ojo-on" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="ojo-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+        <p class="field-hint" style="margin-top:8px;">
+          <a href="#" onclick="event.preventDefault();mostrarRecuperar(false)">¿Olvidaste tu contraseña?</a>
+        </p>
+      </div>
+
+      <div id="login-error"></div>
+
+      <button type="submit" class="btn btn-primario btn-block" id="login-btn" style="margin-top:8px;">
+        Entrar al panel
+      </button>
     </div>
 
-    <div id="login-error"></div>
+    <div id="recuperar" style="display:none;">
+      <!-- Paso 1: solo el correo -->
+      <div id="rec-paso1">
+        <div class="field" style="text-align:left;">
+          <label>Tu correo</label>
+          <input type="email" id="rec-email" placeholder="tucorreo@ejemplo.com" autocomplete="email">
+        </div>
+        <div id="rec-codigo-error"></div>
+        <button type="button" class="btn btn-primario btn-block" onclick="enviarCodigo(event)" style="margin-top:8px;">
+          Enviar código
+        </button>
+        <p class="field-hint" style="margin-top:10px;">
+          <a href="#" onclick="cancelarRecuperar(event)">&larr; Volver</a>
+        </p>
+      </div>
 
-    <button type="submit" class="btn btn-primario btn-block" id="login-btn" style="margin-top:8px;">
-      Entrar al panel
-    </button>
+      <!-- Paso 2: código + nueva contraseña -->
+      <div id="rec-paso2" style="display:none;">
+        <div id="rec-aviso"></div>
+        <div class="field" style="text-align:left;">
+          <label>Código de 6 dígitos</label>
+          <input type="text" id="rec-codigo" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+        </div>
+        <div class="field" style="text-align:left;">
+          <label>Nueva contraseña</label>
+          <input type="password" id="rec-pass" placeholder="Nueva contraseña" autocomplete="new-password">
+        </div>
+        <div class="field" style="text-align:left;">
+          <label>Repite la contraseña</label>
+          <input type="password" id="rec-pass2" placeholder="Repite la contraseña" autocomplete="new-password">
+        </div>
+        <div id="rec-error"></div>
+        <button type="button" class="btn btn-primario btn-block" onclick="confirmarNuevaClave(event)" style="margin-top:8px;">
+          Guardar nueva contraseña
+        </button>
+        <p class="field-hint" style="margin-top:10px;">
+          <a href="#" onclick="cancelarRecuperar(event)">&larr; Volver</a>
+        </p>
+      </div>
+    </div>
 
     <p class="field-hint" style="margin-top:18px;">
       <a href="index.html">&larr; Volver a la tienda</a>
