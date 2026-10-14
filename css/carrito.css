@@ -76,7 +76,7 @@
 }
 .btn-checkout {
   width: 100%; background: var(--rosa-dark); color: #fff; border: none; border-radius: 14px;
-  padding: 16px; font-family: var(--font-texto); font-weight: 600; font-size: 16px;
+  padding: 11px; font-family: var(--font-texto); font-weight: 600; font-size: 16px;
   cursor: pointer; margin-top: 14px; transition: background 0.2s; box-sizing: border-box;
 }
 .btn-checkout:hover { background: var(--lila-dark); }
@@ -89,7 +89,7 @@
 /* MODAL CHECKOUT */
 .checkout-modal {
   position: fixed; inset: 0; background: rgba(58,42,69,0.55); z-index: 400;
-  display: flex; align-items: center; justify-content: center; padding: 16px;
+  display: flex; align-items: center; justify-content: center; padding: 11px;
   opacity: 0; pointer-events: none; transition: opacity 0.3s;
 }
 .checkout-modal.open { opacity: 1; pointer-events: all; }
@@ -142,7 +142,7 @@
   margin-top: 4px; padding-top: 4px; color: var(--rosa-dark);
 }
 .btn-enviar-pedido {
-  width: 100%; padding: 16px; background: #25D366; color: #fff; border: none; border-radius: 14px;
+  width: 100%; padding: 11px; background: #25D366; color: #fff; border: none; border-radius: 14px;
   font-family: var(--font-texto); font-weight: 600; font-size: 16px; cursor: pointer;
   display: flex; align-items: center; justify-content: center; gap: 8px;
   transition: background 0.2s; margin-top: 8px;
@@ -155,7 +155,7 @@
 /* En pantallas bajas se aprieta un poco más para que no haya scroll. */
 @media (max-height: 720px) {}
   .resumen-pedido { margin: 5px 0; padding: 9px 11px; }
-  .btn-enviar-pedido { padding: 16px; margin-top: 5px; }
+  .btn-enviar-pedido { padding: 11px; margin-top: 5px; }
 }
 
 /* Selector de barrio/ciudad más bajo dentro del checkout */
