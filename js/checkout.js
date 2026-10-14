@@ -276,24 +276,7 @@ async function enviarPedido() {
 
   window.open(`https://api.whatsapp.com/send?phone=${NEGOCIO.whatsapp}&text=${encodeURIComponent(lineas)}`, '_blank');
   sonidoCaja();
-  // Notificar a webhook opcional si está configurado
-  try {
-    if (NEGOCIO.webhookPedidos) {
-      fetch(NEGOCIO.webhookPedidos, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tipo: 'nuevo_pedido',
-          codigo,
-          datos: datos,
-          carrito: [...carrito],
-          totales: { subtotal, descuento, domicilio, total },
-          pagoLabel
-        }),
-        mode: 'cors'
-      }).catch(() => {});
-    }
-  } catch (e) {}
+
   cerrarCheckout();
 
   window._ultimoPedido = {
