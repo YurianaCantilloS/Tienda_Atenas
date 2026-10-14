@@ -142,10 +142,10 @@
   margin-top: 4px; padding-top: 4px; color: var(--rosa-dark);
 }
 .btn-enviar-pedido {
-  width: 100%; padding: 11px; background: #25D366; color: #fff; border: none; border-radius: 12px;
-  font-family: var(--font-texto); font-weight: 600; font-size: 14.5px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  transition: background 0.2s; margin-top: 7px;
+  width: 100%; padding: 9px; background: #25D366; color: #fff; border: none; border-radius: 11px;
+  font-family: var(--font-texto); font-weight: 600; font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background 0.2s; margin-top: 6px;
 }
 .btn-enviar-pedido:hover { background: #1DA851; }
 .pago-opciones-sm { justify-content: center; flex-wrap: wrap; }
