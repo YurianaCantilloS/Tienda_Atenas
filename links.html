@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atenas Style Shop</title>
+<link rel="icon" type="image/png" href="assets/Logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Dancing+Script:wght@600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --lila-dark:#9B5FC0;
+    --lila:#C9A6E0;
+    --rosa:#FFB8DA;
+    --rosa-dark:#F25FA4;
+    --negro:#3A2A45;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html, body{ min-height:100%; }
+  body{
+    position:relative;
+    display:flex;
+    justify-content:center;
+    font-family:'Jost', system-ui, -apple-system, sans-serif;
+    color:var(--negro);
+    background:linear-gradient(160deg,#5b3a78 0%, #9b6fb0 55%, #e0a3c4 100%);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    background-image:var(--lk-fondo, none);
+    background-size:cover;
+    background-position:center top;
+    opacity:0;
+    transition:opacity .3s ease;
+    z-index:-2;
+  }
+  body.con-fondo::before{ opacity:1; }
+  body::after{
+    content:"";
+    position:fixed; inset:0;
+    background:linear-gradient(180deg, rgba(46,20,66,0) 0%, rgba(46,20,66,.28) 45%, rgba(46,20,66,.6) 100%);
+    z-index:-1;
+  }
+
+  .page{
+    width:100%;
+    max-width:460px;
+    min-height:100vh;
+    padding:26px 18px 30px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    position:relative;
+    z-index:1;
+  }
+
+  .logo-wrap{
+    width:124px; height:124px;
+    border-radius:50%;
+    background:#fdf2f8;
+    border:3px solid #e5cd90;
+    box-shadow:0 10px 30px rgba(46,20,66,.45), 0 0 0 6px rgba(255,255,255,.16);
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+    margin-bottom:14px;
+    flex-shrink:0;
+  }
+  .logo-wrap img{ width:100%; height:100%; object-fit:cover; }
+
+  .brand{
+    font-family:'Baloo 2', system-ui, sans-serif;
+    color:#fff;
+    font-size:1.65rem;
+    font-weight:800;
+    line-height:1.1;
+    text-align:center;
+    letter-spacing:.2px;
+    text-shadow:0 3px 14px rgba(46,20,66,.5);
+    margin-bottom:9px;
+  }
+
+  .handle{
+    display:inline-flex; align-items:center; gap:6px;
+    background:rgba(255,255,255,.22);
+    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,.4);
+    color:#fff;
+    font-weight:500;
+    font-size:.8rem;
+    padding:5px 15px;
+    border-radius:999px;
+    margin-bottom:10px;
+  }
+  .handle svg{ width:13px; height:13px; }
+
+  .tagline{
+    font-family:'Dancing Script', cursive;
+    color:#fff;
+    font-size:1.22rem;
+    font-weight:700;
+    text-align:center;
+    line-height:1.25;
+    text-shadow:0 2px 10px rgba(46,20,66,.45);
+  }
+  .subtagline{
+    color:rgba(255,255,255,.9);
+    font-size:.74rem;
+    font-weight:500;
+    letter-spacing:.3px;
+    text-align:center;
+    margin-top:3px;
+    margin-bottom:20px;
+  }
+
+  .links{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+
+  .link-card{
+    display:flex;
+    align-items:center;
+    gap:13px;
+    width:100%;
+    background:rgba(255,255,255,.55);
+    -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+    border:1px solid rgba(255,255,255,.6);
+    border-radius:16px;
+    padding:12px 13px;
+    text-decoration:none;
+    box-shadow:0 6px 18px rgba(46,20,66,.2);
+    transition:transform .18s ease, background .18s ease, box-shadow .18s ease;
+  }
+  .link-card:hover, .link-card:focus-visible{
+    transform:translateY(-2px);
+    background:rgba(255,255,255,.72);
+    box-shadow:0 12px 26px rgba(46,20,66,.28);
+    outline:none;
+  }
+  .link-card.sin-url{ cursor:default; }
+  .link-card.sin-url:hover{ transform:none; }
+
+  .icon-circle{
+    flex-shrink:0;
+    width:44px; height:44px;
+    border-radius:13px;
+    background:linear-gradient(135deg, #a986c4, #7a4a9e);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff;
+    box-shadow:0 5px 14px rgba(122,74,158,.35);
+  }
+  .icon-circle svg{ width:21px; height:21px; }
+
+  .link-text{ flex:1; min-width:0; }
+  .link-title{
+    color:var(--negro);
+    font-weight:600;
+    font-size:.93rem;
+    line-height:1.2;
+    margin-bottom:2px;
+  }
+  .link-sub{
+    color:#6b5578;
+    font-size:.72rem;
+    font-weight:400;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+
+  .chevron{
+    flex-shrink:0;
+    width:28px; height:28px;
+    border-radius:50%;
+    background:rgba(242,95,164,.16);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--rosa-dark);
+    transition:transform .18s ease;
+  }
+  .link-card:hover .chevron{ transform:translateX(3px); }
+  .chevron svg{ width:13px; height:13px; }
+
+  .socials{
+    display:flex; flex-wrap:wrap; justify-content:center;
+    gap:16px;
+    margin-top:22px;
+  }
+  .social-icon{
+    width:44px; height:44px;
+    border-radius:50%;
+    border:1.5px solid rgba(255,255,255,.75);
+    background:rgba(255,255,255,.14);
+    display:flex; align-items:center; justify-content:center;
+    color:#fff;
+    text-decoration:none;
+    transition:background .18s ease, transform .18s ease;
+  }
+  .social-icon:hover{ background:rgba(255,255,255,.3); transform:translateY(-2px); }
+  .social-icon svg{ width:19px; height:19px; }
+
+  .footer-msg{
+    margin-top:20px;
+    color:#fff;
+    font-family:'Dancing Script', cursive;
+    font-size:1.05rem;
+    text-align:center;
+    text-shadow:0 2px 8px rgba(46,20,66,.45);
+  }
+
+  @media (max-width:420px){
+    .brand{ font-size:1.48rem; }
+    .logo-wrap{ width:112px; height:112px; }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="logo-wrap">
+      <img src="assets/Logo.png" alt="Atenas Style Shop">
+    </div>
+
+    <h1 class="brand" id="lk-marca">Atenas Style Shop</h1>
+
+    <div class="handle" id="lk-handle-wrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+      <span id="lk-handle">@atenas.style_ctg</span>
+    </div>
+
+    <p class="tagline" id="lk-tagline">Bodega mayorista de productos de belleza</p>
+    <p class="subtagline" id="lk-subtagline">Compra fácil · Paga al recibir</p>
+
+    <nav class="links" id="lk-lista"></nav>
+
+    <div class="socials" id="lk-redes"></div>
+
+    <p class="footer-msg" id="lk-pie">Elegancia que se siente, estilo que se vive.</p>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/config.js"></script>
+<script src="js/iconos.js"></script>
+<script>
+  var LK_DEF = {
+    fondo: '',
+    marca: 'Atenas Style Shop',
+    handle: '@atenas.style_ctg',
+    tagline: 'Bodega mayorista de productos de belleza',
+    subtagline: 'Compra fácil · Paga al recibir',
+    pie: 'Elegancia que se siente, estilo que se vive.',
+    items: [
+      { icono:'tienda',   titulo:'Tienda online',     sub:'Compra fácil desde tu celular',        url:'https://tienda-atenas.vercel.app/', activo:true },
+      { icono:'whatsapp', titulo:'Atención por WhatsApp', sub:'Escríbenos para atención personalizada', url:'https://wa.me/573184346975', activo:true },
+      { icono:'pdf',      titulo:'Catálogo PDF',      sub:'Mira todos los productos y precios',   url:'', activo:true },
+      { icono:'grupo',    titulo:'Grupo mayorista',   sub:'Únete a nuestro grupo exclusivo',      url:'', activo:true }
+    ],
+    sociales: [
+      { icono:'instagram', url:'https://www.instagram.com/atenas.style_ctg' },
+      { icono:'tiktok',    url:'https://www.tiktok.com/@atenas_style' }
+    ]
+  };
+
+  function lkEsc(s){
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  function lkIcono(id){
+    return (typeof svgLinkIconFor === 'function') ? svgLinkIconFor(id) : '';
+  }
+  function lkUrl(u){
+    u = String(u == null ? '' : u).trim();
+    if (!u) return '';
+    if (/^(https?:)?\/\//i.test(u) || /^(mailto|tel):/i.test(u)) return u;
+    return 'https://' + u.replace(/^\/+/, '');
+  }
+  var CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>';
+
+  function lkPintarItems(items){
+    items = Array.isArray(items) ? items : [];
+    var html = '';
+    items.forEach(function(it){
+      if (it && it.activo === false) return;
+      if (!it || (!it.titulo && !it.url)) return;
+      var url = lkUrl(it.url);
+      var etiqueta = url ? 'a' : 'div';
+      var attr = url ? ' href="' + lkEsc(url) + '" target="_blank" rel="noopener"' : '';
+      html += '<' + etiqueta + ' class="link-card' + (url ? '' : ' sin-url') + '"' + attr + '>'
+        +   '<span class="icon-circle">' + lkIcono(it.icono) + '</span>'
+        +   '<span class="link-text">'
+        +     '<span class="link-title">' + lkEsc(it.titulo || '') + '</span>'
+        +     (it.sub ? '<span class="link-sub">' + lkEsc(it.sub) + '</span>' : '')
+        +   '</span>'
+        +   (url ? '<span class="chevron">' + CHEVRON + '</span>' : '')
+        + '</' + etiqueta + '>';
+    });
+    return html;
+  }
+
+  function lkPintarRedes(redes){
+    redes = Array.isArray(redes) ? redes : [];
+    var html = '';
+    redes.forEach(function(r){
+      if (!r) return;
+      var url = lkUrl(r.url);
+      if (!url) return;
+      html += '<a class="social-icon" href="' + lkEsc(url) + '" target="_blank" rel="noopener" aria-label="' + lkEsc(r.icono || 'red') + '">'
+        +   lkIcono(r.icono) + '</a>';
+    });
+    return html;
+  }
+
+  function lkAplicar(cfg){
+    cfg = Object.assign({}, LK_DEF, cfg || {});
+    if (!Array.isArray(cfg.items)) cfg.items = LK_DEF.items;
+    if (!Array.isArray(cfg.sociales)) cfg.sociales = LK_DEF.sociales;
+
+    document.title = cfg.marca || 'Atenas Style Shop';
+
+    if (cfg.fondo) {
+      document.body.style.setProperty('--lk-fondo', 'url("' + String(cfg.fondo).replace(/"/g, '%22') + '")');
+      document.body.classList.add('con-fondo');
+    } else {
+      document.body.classList.remove('con-fondo');
+    }
+
+    document.getElementById('lk-marca').textContent     = cfg.marca || '';
+    document.getElementById('lk-tagline').textContent   = cfg.tagline || '';
+    document.getElementById('lk-subtagline').textContent = cfg.subtagline || '';
+    document.getElementById('lk-pie').textContent       = cfg.pie || '';
+    document.getElementById('lk-handle').textContent    = cfg.handle || '';
+    document.getElementById('lk-handle-wrap').style.display = cfg.handle ? '' : 'none';
+
+    document.getElementById('lk-lista').innerHTML = lkPintarItems(cfg.items);
+
+    var redesHtml = lkPintarRedes(cfg.sociales);
+    var redBox = document.getElementById('lk-redes');
+    redBox.innerHTML = redesHtml;
+    redBox.style.display = redesHtml ? '' : 'none';
+  }
+
+  function lkCargar(){
+    if (!(window.sb && window.sb.from)) return;
+    window.sb.from('configuracion').select('links_cfg').eq('id', 1).maybeSingle()
+      .then(function(res){
+        if (res && res.data && res.data.links_cfg) lkAplicar(res.data.links_cfg);
+        else lkAplicar(LK_DEF);
+      })
+      .catch(function(){ lkAplicar(LK_DEF); });
+  }
+
+  /* Vista previa dentro del panel: el panel manda la config por postMessage. */
+  window.addEventListener('message', function(ev){
+    var d = ev && ev.data;
+    if (d && d.tipo === 'links' && d.cfg) lkAplicar(d.cfg);
+  });
+
+  var enPreview = false;
+  try { enPreview = window.self !== window.top; } catch(e){ enPreview = true; }
+
+  if (enPreview) lkAplicar(LK_DEF);   /* el panel manda los datos reales enseguida */
+  else lkCargar();
+</script>
+</body>
+</html>
