@@ -10,18 +10,20 @@ function agregarAlCarrito(prod, cantidad) {
   const existente = carrito.find(i => i.id === prod.id);
   if (existente) {
     const nuevaCant = existente.cantidad + cantidad;
-    if (nuevaCant > prod.stock) { showToast(`Solo hay ${prod.stock} disponibles`, 'warn'); return; }
+    if (nuevaCant > prod.stock) { showToast(`Solo hay ${prod.stock} disponibles`, 'warn'); sonidoNoDisponible(); return; }
     existente.cantidad = nuevaCant;
   } else {
     carrito.push({ ...prod, cantidad });
   }
   actualizarCarrito();
   showToast(`${prod.nombre} agregado al carrito`, 'cart');
+  sonidoAgregar();
 }
 
 function quitarDelCarrito(id) {
   carrito = carrito.filter(i => i.id !== id);
   actualizarCarrito();
+  sonidoQuitar();
 }
 
 function cambiarCantidadCarrito(id, delta) {
@@ -30,7 +32,7 @@ function cambiarCantidadCarrito(id, delta) {
   const nueva = item.cantidad + delta;
   if (nueva < 1) { quitarDelCarrito(id); return; }
   const prod = PRODUCTOS.find(p => p.id === id);
-  if (prod && nueva > prod.stock) { showToast('Sin más stock disponible', 'warn'); return; }
+  if (prod && nueva > prod.stock) { showToast('Sin más stock disponible', 'warn'); sonidoNoDisponible(); return; }
   item.cantidad = nueva;
   actualizarCarrito();
 }
@@ -76,7 +78,20 @@ function actualizarCarrito() {
     totalesEl.style.display = 'block';
   }
 
-  /* sincroniza el stepper de las tarjetas con el estado del carrito */
+  /* sincroniza la franja inferior y el stepper de las tarjetas */
+  const cant = carrito.reduce((a, i) => a + i.cantidad, 0);
+  document.body.classList.toggle('con-carrito', cant > 0);
+
+  const bar = document.getElementById('cart-bar');
+  if (bar) {
+    const { total } = calcularTotales();
+    const nEl = document.getElementById('cart-bar-count');
+    const tEl = document.getElementById('cart-bar-total');
+    if (nEl) nEl.textContent = cant;
+    if (tEl) tEl.textContent = formatCOP(total);
+    bar.classList.toggle('show', cant > 0);
+  }
+
   if (typeof renderProductos === 'function') renderProductos();
 }
 

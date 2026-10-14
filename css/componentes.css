@@ -12,7 +12,7 @@
   border-left: 4px solid var(--lila-dark);
   box-shadow: 0 18px 46px rgba(58,42,69,0.22), 0 3px 10px rgba(58,42,69,0.10);
   opacity: 0; pointer-events: none;
-  transition: transform .34s cubic-bezier(.2,.9,.3,1.25), opacity .22s ease;
+  transition: transform .34s cubic-bezier(.2,.9,.3,1.25), opacity .22s ease, bottom .3s ease;
 }
 .toast.show { transform: translateX(-50%) translateY(0) scale(1); opacity: 1; }
 
@@ -37,9 +37,13 @@
 .toast.t-cart    { border-left-color: var(--lila-dark); }
 .toast.t-cart .toast-ico    { background: var(--lila-bg); color: var(--lila-dark); }
 
+/* Cuando la franja del carrito está visible, la notificación sube para no chocarla */
+.con-carrito .toast { bottom: 92px; }
+
 @media (max-width: 480px) {
   .toast { bottom: 16px; font-size: 13px; padding: 11px 15px 11px 11px; }
   .toast .toast-ico { width: 30px; height: 30px; }
+  .con-carrito .toast { bottom: 84px; }
 }
 
 /* AVISO CENTRADO (regla de compra al por mayor) */

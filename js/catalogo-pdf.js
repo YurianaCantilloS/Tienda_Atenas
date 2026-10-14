@@ -92,6 +92,9 @@ function catProductosTienda() {
   return catListaProductos().filter(p => p.mostrar_en_tienda !== false && Number(p.stock) > 0);
 }
 function catTipo(p) { return p.tipo_venta === 'detal' ? 'Al detal' : 'Por mayor'; }
+function catCompararNombre(a, b) {
+  return String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base', numeric: true });
+}
 function catNegocio() {
   try { return (typeof NEGOCIO !== 'undefined' && NEGOCIO.nombre) || 'Atenas Style Shop'; }
   catch (e) { return (window.NEGOCIO && window.NEGOCIO.nombre) || 'Atenas Style Shop'; }
@@ -371,25 +374,20 @@ async function _generarCatalogo(productos) {
   setText(CAT.negro); catFem(doc, 17, true);
   doc.text('Pago contra entrega', chkX + 24, y2);
 
-  /* ── Productos por categoría ── */
-  const cols = 3, cGap = 12;
+  /* ── Productos por categoría (3 columnas × 3 filas = 9 por página) ── */
+  const cols = 3, cGap = 12, rowGap = 12;
   const cellW = (CAT.W - 2 * CAT.M - (cols - 1) * cGap) / cols;
-  const photo = cellW - 20;
-  const cellH = photo + 94;
-  const rowGap = 14;
+  const photo = cellW - 22;
+  const cellH = photo + 88;
 
   const cats = CATALOGO_CAT_ORDEN.map(v => ({ valor: v, label: CATALOGO_CAT_LABELS[v] || v }));
   const extras = [...new Set(productos.map(p => p.categoria))].filter(c => c && !CATALOGO_CAT_ORDEN.includes(c));
   extras.forEach(v => cats.push({ valor: v, label: CATALOGO_CAT_LABELS[v] || v }));
   const grupos = cats
-    .map(c => ({ valor: c.valor, label: c.label, items: productos.filter(p => p.categoria === c.valor) }))
+    .map(c => ({ valor: c.valor, label: c.label, items: productos.filter(p => p.categoria === c.valor).sort(catCompararNombre) }))
     .filter(g => g.items.length);
-  const sinCat = productos.filter(p => !p.categoria);
+  const sinCat = productos.filter(p => !p.categoria).sort(catCompararNombre);
   if (sinCat.length) grupos.push({ valor: '', label: 'Otros', items: sinCat });
-
-  /* Los productos "al detal" también van en su propia categoría */
-  const detal = productos.filter(p => p.tipo_venta === 'detal');
-  if (detal.length) grupos.push({ valor: '__detal', label: 'Al detal', items: detal, icono: CAT_ICON.detal });
 
   /* Ícono grande por categoría */
   const iconoDe = {};

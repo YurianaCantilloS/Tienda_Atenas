@@ -71,12 +71,14 @@
   box-shadow: 0 3px 10px rgba(0,0,0,0.18);
 }
 .sin-stock-sub {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-family: var(--font-titulo); font-weight: 700; font-size: 10px;
-  letter-spacing: 0.4px; text-transform: uppercase;
-  color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.45);
+  display: inline-flex; align-items: center;
+  font-family: var(--font-titulo); font-weight: 700; font-size: 9px;
+  letter-spacing: 0.4px; text-transform: uppercase; color: #fff;
+  background: rgba(58,42,69,0.7);
+  padding: 3px 9px; border-radius: 50px;
+  border: 1px solid rgba(255,255,255,0.35);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.18);
 }
-.sin-stock-sub .icon-svg { width: 1em; height: 1em; color: var(--rosa); }
 
 .prod-img {
   width: 100%; aspect-ratio: 1; background: var(--lila-bg); cursor: pointer;
@@ -89,13 +91,14 @@
 
 .destacado-badge {
   position: absolute; top: 10px; left: 10px; z-index: 3;
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
   background: linear-gradient(135deg, #F5A623, #F7C948);
-  color: #fff; border-radius: 20px;
-  font-size: 10px; font-weight: 800; padding: 3px 10px;
-  letter-spacing: 0.4px; text-transform: uppercase;
+  color: #fff;
   box-shadow: 0 4px 12px rgba(245,166,35,0.4);
   animation: destacado-pop 0.4s ease-out;
 }
+.destacado-badge .icon-svg { width: 16px; height: 16px; }
 @keyframes destacado-pop {
   from { transform: scale(0.6); opacity: 0; }
   to   { transform: scale(1); opacity: 1; }
@@ -155,6 +158,9 @@
 }
 .overlay.open { opacity: 1; pointer-events: all; }
 @media (min-width: 600px) { .overlay { align-items: center; } }
+
+/* Si hay productos en el carrito, el modal termina arriba de la franja del total */
+.con-carrito .overlay { padding-bottom: 88px; }
 
 .modal {
   background: #fff; border-radius: 24px 24px 0 0; width: 100%; max-width: 500px;
@@ -226,5 +232,6 @@
 .prod-tipo-badge.detal { background: var(--rosa-bg); color: var(--rosa-dark); }
 
 @media (max-width: 480px) {
-  .destacado-badge { font-size: 10px; padding: 4px 9px; }
+  .destacado-badge { width: 28px; height: 28px; }
+  .destacado-badge .icon-svg { width: 14px; height: 14px; }
 }

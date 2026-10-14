@@ -307,6 +307,8 @@ function irA(pagina) {
     b.classList.toggle('active', b.dataset.page === pagina);
   });
   if (pagina === 'resumen') cargarResumen();
+  if (pagina === 'envios') cargarEnvios();
+  if (pagina === 'enlaces') repintarLinks();
   window.scrollTo(0, 0);
 }
 
@@ -524,9 +526,6 @@ function abrirModalProducto() {
   document.getElementById('mp-tipo').value = 'detal';
   document.getElementById('mp-mostrar').value = 'true';
   document.getElementById('mp-categoria').value = CATEGORIAS[0];
-  const chkNuevo = document.getElementById('mp-nuevo');
-  if (chkNuevo) chkNuevo.checked = false;
-  marcarCampoNuevo();
   abrirModal('modal-producto');
 }
 
@@ -551,18 +550,7 @@ function editarProducto(id) {
   document.getElementById('mp-origen').value = p.origen || 'propio';
   document.getElementById('mp-tipo').value = p.tipo_venta || 'detal';
   document.getElementById('mp-mostrar').value = String(!!p.mostrar_en_tienda);
-  const chkNuevo = document.getElementById('mp-nuevo');
-  if (chkNuevo) chkNuevo.checked = !!p.nuevo_ingreso;
-  marcarCampoNuevo();
   abrirModal('modal-producto');
-}
-
-/* Si todavía no corriste sql/tematicas-y-nuevos.sql, esconde el
-   interruptor de "Nuevo ingreso" y explica qué falta. */
-function marcarCampoNuevo() {
-  const campo = document.getElementById('mp-nuevo-campo');
-  if (!campo) return;
-  campo.style.display = TIENE_NUEVO ? '' : 'none';
 }
 
 /* Las referencias de lo que se crea aquí son EXT-0001, EXT-0002...
@@ -603,22 +591,6 @@ async function guardarProducto() {
     mostrar_en_tienda: document.getElementById('mp-mostrar').value === 'true'
   };
 
-  /* "Nuevo ingreso": solo si la columna ya existe en la base */
-  if (TIENE_NUEVO) {
-    const chkNuevo = document.getElementById('mp-nuevo');
-    const esNuevo = !!(chkNuevo && chkNuevo.checked);
-    datos.nuevo_ingreso = esNuevo;
-
-    if (!esNuevo) {
-      datos.nuevo_ingreso_at = null;
-    } else {
-      const p = id ? PRODUCTOS.find(x => x.id === id) : null;
-      datos.nuevo_ingreso_at = (p && p.nuevo_ingreso && p.nuevo_ingreso_at)
-        ? p.nuevo_ingreso_at      /* ya lo estaba: no le muevas la fecha */
-        : new Date().toISOString();
-    }
-  }
-
   btn.disabled = true;
   btn.textContent = 'Guardando...';
 
@@ -655,6 +627,7 @@ function pedirBorrar(id) {
   document.getElementById('conf-titulo').textContent = '¿Borrar producto?';
   document.getElementById('conf-texto').textContent =
     `Se va a borrar "${p?.nombre || ''}" de la base de datos. Si solo quieres que no aparezca en la página, apaga el interruptor en vez de borrarlo.`;
+  document.getElementById('conf-btn').textContent = 'Sí, borrar';
   document.getElementById('conf-btn').onclick = borrarProducto;
   abrirModal('modal-confirmar');
 }
@@ -851,6 +824,7 @@ function pedirBorrarPedido(id) {
   document.getElementById('conf-texto').textContent =
     `Se va a borrar el pedido ${p?.codigo || ''} de ${p?.cliente || 'el cliente'}. ` +
     `No se puede deshacer.`;
+  document.getElementById('conf-btn').textContent = 'Sí, borrar';
   document.getElementById('conf-btn').onclick = () => borrarPedido(id);
   abrirModal('modal-confirmar');
 }
@@ -1256,6 +1230,7 @@ function ajustes() {
    Aquí solo cargamos lo que sí cambia la usuaria. */
 function cargarAjustes() {
   cargarApariencia();
+  cargarLinks();
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -1479,6 +1454,281 @@ function preverAviso() { preverTodo(); }
 /* El pie de la vista previa: a quién le llega el WhatsApp y el Instagram */
 function preverContacto() { preverTodo(); }
 
+/* ══════════════════════════════════════════════════════════
+   PÁGINA DE ENLACES (tipo Linktree)
+   Todo vive en la columna links_cfg (jsonb) de "configuracion".
+   La publica links.html, que lee esa misma fila.
+   ══════════════════════════════════════════════════════════ */
+
+const LINKS_DEF = {
+  fondo: '',
+  marca: 'Atenas Style Shop',
+  handle: '@atenas.style_ctg',
+  tagline: 'Bodega mayorista de productos de belleza',
+  subtagline: 'Compra fácil · Paga al recibir',
+  pie: 'Elegancia que se siente, estilo que se vive.',
+  items: [
+    { icono: 'tienda',   titulo: 'Tienda online',         sub: 'Compra fácil desde tu celular',        url: 'https://tienda-atenas.vercel.app/', activo: true },
+    { icono: 'whatsapp', titulo: 'Atención por WhatsApp', sub: 'Escríbenos para atención personalizada', url: 'https://wa.me/573184346975', activo: true },
+    { icono: 'pdf',      titulo: 'Catálogo PDF',          sub: 'Mira todos los productos y precios',   url: '', activo: true },
+    { icono: 'grupo',    titulo: 'Grupo mayorista',       sub: 'Únete a nuestro grupo exclusivo',      url: '', activo: true }
+  ],
+  sociales: [
+    { icono: 'instagram', url: 'https://www.instagram.com/atenas.style_ctg' },
+    { icono: 'tiktok',    url: 'https://www.tiktok.com/@atenas_style' }
+  ]
+};
+
+let LINKS_CFG = null;
+
+const LK_UP   = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>';
+const LK_DOWN = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+const LK_DEL  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+function leerLinksLocal() {
+  try { return JSON.parse(localStorage.getItem('atenas_links')) || null; } catch (e) { return null; }
+}
+
+function normalizarLinks(c) {
+  const base = { ...LINKS_DEF, ...(c || {}) };
+  base.items = (Array.isArray(base.items) ? base.items : LINKS_DEF.items).map(it => ({
+    icono: (it && it.icono) || 'link',
+    titulo: (it && it.titulo) || '',
+    sub: (it && it.sub) || '',
+    url: (it && it.url) || '',
+    activo: !it || it.activo !== false
+  }));
+  base.sociales = (Array.isArray(base.sociales) ? base.sociales : LINKS_DEF.sociales).map(r => ({
+    icono: (r && r.icono) || 'link',
+    url: (r && r.url) || ''
+  }));
+  return base;
+}
+
+async function cargarLinks() {
+  let fila = null, faltoSql = false;
+  try {
+    const { data, error } = await sb.from('configuracion').select('links_cfg').eq('id', 1).maybeSingle();
+    if (error) throw error;
+    fila = data;
+  } catch (e) {
+    faltoSql = true;
+  }
+
+  const guardado = (fila && fila.links_cfg) ? fila.links_cfg : leerLinksLocal();
+  const cfg = normalizarLinks(guardado || LINKS_DEF);
+  LINKS_CFG = cfg;
+
+  document.getElementById('lk-fondo').value      = cfg.fondo || '';
+  document.getElementById('lk-marca').value      = cfg.marca || '';
+  document.getElementById('lk-handle').value     = cfg.handle || '';
+  document.getElementById('lk-tagline').value    = cfg.tagline || '';
+  document.getElementById('lk-subtagline').value = cfg.subtagline || '';
+  document.getElementById('lk-pie').value        = cfg.pie || '';
+
+  renderEditorItems();
+  renderEditorRedes();
+  preverLinks();
+
+  const box = document.getElementById('aviso-links');
+  if (box) box.style.display = faltoSql ? 'block' : 'none';
+
+  /* Enlace público real: el de Vercel, no la ruta local. */
+  const sitio = (typeof SITIO_URL !== 'undefined' && SITIO_URL) ? SITIO_URL.replace(/\/+$/, '') : '';
+  const urlPublica = sitio ? (sitio + '/links.html') : 'links.html';
+  const url = document.getElementById('lk-url');
+  if (url) { url.href = urlPublica; url.textContent = urlPublica; }
+  const ver = document.getElementById('lk-ver');
+  if (ver) ver.href = urlPublica;
+}
+
+function cfgDeFormularioLinks() {
+  return {
+    fondo:      (document.getElementById('lk-fondo').value || '').trim(),
+    marca:      document.getElementById('lk-marca').value,
+    handle:     document.getElementById('lk-handle').value,
+    tagline:    document.getElementById('lk-tagline').value,
+    subtagline: document.getElementById('lk-subtagline').value,
+    pie:        document.getElementById('lk-pie').value,
+    items:      LINKS_CFG ? LINKS_CFG.items : [],
+    sociales:   LINKS_CFG ? LINKS_CFG.sociales : []
+  };
+}
+
+function preverLinks() {
+  const zona = document.querySelector('.drop[data-destino="lk-fondo"]');
+  const img  = (document.getElementById('lk-fondo').value || '').trim();
+  if (zona) { if (img) mostrarFotoEnZona(zona, img); else vaciarZona(zona); }
+  mandarAlPreviewLinks({ tipo: 'links', cfg: cfgDeFormularioLinks() });
+}
+
+function repintarLinks() {
+  if (!LINKS_CFG) return;
+  mandarAlPreviewLinks({ tipo: 'links', cfg: cfgDeFormularioLinks() });
+}
+
+/* La vista previa de Enlaces vive en su propio marco (lk-if). */
+function mandarAlPreviewLinks(msg) {
+  const f = document.getElementById('lk-if');
+  if (!f || !f.contentWindow) return false;
+  try { f.contentWindow.postMessage(msg, '*'); return true; }
+  catch (e) { console.warn('[vista previa enlaces]', e); return false; }
+}
+
+function quitarFondoLinks() {
+  document.getElementById('lk-fondo').value = '';
+  preverLinks();
+}
+
+/* ── Editor de botones ───────────────────────── */
+
+function lkSelect(i, actual, handler) {
+  return '<select class="lk-sel" onchange="' + handler + '(' + i + ', this.value)">' +
+    LINK_ICONOS_LISTA.map(o =>
+      '<option value="' + o.id + '"' + (o.id === actual ? ' selected' : '') + '>' + o.nombre + '</option>'
+    ).join('') + '</select>';
+}
+
+function renderEditorItems() {
+  const box = document.getElementById('lk-lista-editor');
+  if (!box || !LINKS_CFG) return;
+  if (!LINKS_CFG.items.length) {
+    box.innerHTML = '<p class="lk-vacio">Todavía no tienes botones. Dale a "Agregar botón".</p>';
+    return;
+  }
+  box.innerHTML = LINKS_CFG.items.map((it, i) => `
+    <div class="lk-row">
+      <div class="lk-row-ico">${svgLinkIconFor(it.icono)}</div>
+      <div class="lk-row-campos">
+        <div class="lk-row-top">
+          ${lkSelect(i, it.icono, 'lkItemIcono')}
+          <label class="switch lk-mini" title="Mostrar en la página">
+            <input type="checkbox" ${it.activo ? 'checked' : ''} onchange="lkItemActivo(${i}, this.checked)">
+            <span class="slider"></span>
+          </label>
+          <div class="lk-row-tools">
+            <button type="button" class="lk-tool" onclick="moverLink(${i},-1)" title="Subir">${LK_UP}</button>
+            <button type="button" class="lk-tool" onclick="moverLink(${i},1)" title="Bajar">${LK_DOWN}</button>
+            <button type="button" class="lk-tool lk-tool-del" onclick="quitarLink(${i})" title="Borrar">${LK_DEL}</button>
+          </div>
+        </div>
+        <input class="lk-inp" type="text" value="${esc(it.titulo)}" placeholder="Título (ej: Catálogo)" oninput="lkItemCampo(${i},'titulo',this.value)">
+        <input class="lk-inp" type="text" value="${esc(it.sub)}" placeholder="Descripción corta (opcional)" oninput="lkItemCampo(${i},'sub',this.value)">
+        <input class="lk-inp lk-inp-url" type="text" value="${esc(it.url)}" placeholder="Pega aquí el link: https://..." oninput="lkItemCampo(${i},'url',this.value)" autocomplete="off">
+      </div>
+    </div>
+  `).join('');
+}
+
+function lkItemCampo(i, campo, valor) {
+  if (!LINKS_CFG || !LINKS_CFG.items[i]) return;
+  LINKS_CFG.items[i][campo] = valor;
+  preverLinks();
+}
+
+function lkItemIcono(i, v) {
+  if (!LINKS_CFG || !LINKS_CFG.items[i]) return;
+  LINKS_CFG.items[i].icono = v;
+  renderEditorItems();
+  preverLinks();
+}
+
+function lkItemActivo(i, v) {
+  if (!LINKS_CFG || !LINKS_CFG.items[i]) return;
+  LINKS_CFG.items[i].activo = v;
+  preverLinks();
+}
+
+function agregarLink() {
+  if (!LINKS_CFG) LINKS_CFG = normalizarLinks(LINKS_DEF);
+  LINKS_CFG.items.push({ icono: 'link', titulo: '', sub: '', url: '', activo: true });
+  renderEditorItems();
+  preverLinks();
+  const rows = document.querySelectorAll('#lk-lista-editor .lk-row');
+  const last = rows[rows.length - 1];
+  if (last) last.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function quitarLink(i) {
+  if (!LINKS_CFG) return;
+  LINKS_CFG.items.splice(i, 1);
+  renderEditorItems();
+  preverLinks();
+}
+
+function moverLink(i, dir) {
+  if (!LINKS_CFG) return;
+  const j = i + dir, a = LINKS_CFG.items;
+  if (j < 0 || j >= a.length) return;
+  const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  renderEditorItems();
+  preverLinks();
+}
+
+/* ── Editor de redes sociales ────────────────── */
+
+function renderEditorRedes() {
+  const box = document.getElementById('lk-redes-editor');
+  if (!box || !LINKS_CFG) return;
+  if (!LINKS_CFG.sociales.length) {
+    box.innerHTML = '<p class="lk-vacio">Sin redes. Dale a "Agregar red".</p>';
+    return;
+  }
+  box.innerHTML = LINKS_CFG.sociales.map((r, i) => `
+    <div class="lk-row lk-row-red">
+      <div class="lk-row-ico">${svgLinkIconFor(r.icono)}</div>
+      <div class="lk-row-campos">
+        ${lkSelect(i, r.icono, 'lkRedIcono')}
+        <input class="lk-inp lk-inp-url" type="text" value="${esc(r.url)}" placeholder="https://..." oninput="lkRedUrl(${i},this.value)" autocomplete="off">
+      </div>
+      <button type="button" class="lk-tool lk-tool-del" onclick="quitarRed(${i})" title="Borrar">${LK_DEL}</button>
+    </div>
+  `).join('');
+}
+
+function lkRedIcono(i, v) {
+  if (!LINKS_CFG || !LINKS_CFG.sociales[i]) return;
+  LINKS_CFG.sociales[i].icono = v;
+  renderEditorRedes();
+  preverLinks();
+}
+
+function lkRedUrl(i, v) {
+  if (!LINKS_CFG || !LINKS_CFG.sociales[i]) return;
+  LINKS_CFG.sociales[i].url = v;
+  preverLinks();
+}
+
+function agregarRed() {
+  if (!LINKS_CFG) LINKS_CFG = normalizarLinks(LINKS_DEF);
+  LINKS_CFG.sociales.push({ icono: 'instagram', url: '' });
+  renderEditorRedes();
+  preverLinks();
+}
+
+function quitarRed(i) {
+  if (!LINKS_CFG) return;
+  LINKS_CFG.sociales.splice(i, 1);
+  renderEditorRedes();
+  preverLinks();
+}
+
+async function guardarLinks() {
+  const cfg = normalizarLinks(cfgDeFormularioLinks());
+  LINKS_CFG = cfg;
+  localStorage.setItem('atenas_links', JSON.stringify(cfg));
+
+  const { error } = await sb.from('configuracion').update({ links_cfg: cfg }).eq('id', 1);
+  const box = document.getElementById('aviso-links');
+
+  if (error) {
+    if (box) box.style.display = 'block';
+    return aviso('Se guardó solo en este computador. Falta correr sql/pagina-links.sql: ' + error.message, 'error');
+  }
+  if (box) box.style.display = 'none';
+  aviso('¡Listo! Tu página de enlaces ya está publicada.');
+}
+
 /* ══════════════════════════════════════════════
    FOTOS A CLOUDINARY (arrastrar y soltar)
    ══════════════════════════════════════════════ */
@@ -1602,6 +1852,7 @@ function procesandoZona(zona, archivo) {
 
         if (destino === 'mp-foto') reflejarFotoProducto(url);
         if (destino === 'ap-banner-url') preverBanner();
+        if (destino === 'lk-fondo') preverLinks();
 
         repintarPreviews();
       } catch (e) {
@@ -1680,6 +1931,221 @@ function abrirModal(id) {
 
 function modalCerrar() {
   document.querySelectorAll('.modal-fondo.open').forEach(m => m.classList.remove('open'));
+}
+
+/* ══════════════════════════════════════════════
+   ENVÍOS: barrios de Cartagena y ciudades
+   Se guardan en barrios_cartagena y ciudades_colombia,
+   las mismas tablas que lee el checkout de la tienda.
+   Requiere correr sql/zonas-envio.sql una vez.
+   ══════════════════════════════════════════════ */
+
+let BARRIOS_ADMIN = [];
+let CIUDADES_ADMIN = [];
+
+const ENV_EDIT = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+const ENV_DEL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+function avisoEnviosFalta() {
+  const box = document.getElementById('aviso-envios');
+  if (box) box.style.display = 'block';
+}
+
+async function cargarEnvios() {
+  const avisoBox = document.getElementById('aviso-envios');
+  if (avisoBox) avisoBox.style.display = 'none';
+
+  const lb = document.getElementById('lista-barrios');
+  const lc = document.getElementById('lista-ciudades');
+  const cargando = '<div class="cargando"><div class="spinner"></div>Cargando...</div>';
+  if (lb) lb.innerHTML = cargando;
+  if (lc) lc.innerHTML = cargando;
+
+  const [rb, rc] = await Promise.all([
+    sb.from('barrios_cartagena').select('*').order('nombre'),
+    sb.from('ciudades_colombia').select('*').order('nombre')
+  ]);
+
+  if (rb.error || rc.error) {
+    const msg = (rb.error || rc.error).message || 'error';
+    const cont = `<div class="aviso aviso-rojo">No se pudieron cargar las zonas: ${esc(msg)}</div>`;
+    if (lb) lb.innerHTML = cont;
+    if (lc) lc.innerHTML = '';
+    return;
+  }
+
+  BARRIOS_ADMIN = rb.data || [];
+  CIUDADES_ADMIN = rc.data || [];
+  renderBarriosAdmin();
+  renderCiudadesAdmin();
+}
+
+function renderBarriosAdmin() {
+  const cont = document.getElementById('lista-barrios');
+  const n = document.getElementById('envios-n-barrios');
+  if (n) n.textContent = BARRIOS_ADMIN.length ? `(${BARRIOS_ADMIN.length})` : '';
+  if (!cont) return;
+  if (!BARRIOS_ADMIN.length) {
+    cont.innerHTML = '<div class="envios-vacio">Todavía no hay barrios.</div>';
+    return;
+  }
+  cont.innerHTML = BARRIOS_ADMIN.map(b => `
+    <div class="envios-row">
+      <div class="envios-row-info">
+        <span class="envios-nombre">${esc(b.nombre)}</span>
+        <span class="envios-valor">${formatCOP(b.valor_domicilio || 0)}</span>
+      </div>
+      <div class="envios-row-acciones">
+        <button class="envios-editar" title="Editar" onclick="abrirZona('barrio','${b.id}')">${ENV_EDIT}</button>
+        <button class="envios-del" title="Eliminar" onclick="pedirBorrarZona('barrio','${b.id}')">${ENV_DEL}</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderCiudadesAdmin() {
+  const cont = document.getElementById('lista-ciudades');
+  const n = document.getElementById('envios-n-ciudades');
+  if (n) n.textContent = CIUDADES_ADMIN.length ? `(${CIUDADES_ADMIN.length})` : '';
+  if (!cont) return;
+  if (!CIUDADES_ADMIN.length) {
+    cont.innerHTML = '<div class="envios-vacio">Todavía no hay ciudades.</div>';
+    return;
+  }
+  cont.innerHTML = CIUDADES_ADMIN.map(c => `
+    <div class="envios-row">
+      <div class="envios-row-info">
+        <span class="envios-nombre">${esc(c.nombre)}</span>
+        <span class="envios-valor">${esc(c.departamento || '')}</span>
+      </div>
+      <div class="envios-row-acciones">
+        <button class="envios-editar" title="Editar"
+                onclick="abrirZona('ciudad','${c.id}')">${ENV_EDIT}</button>
+        <button class="envios-del" title="Eliminar"
+                onclick="pedirBorrarZona('ciudad','${c.id}')">${ENV_DEL}</button>
+      </div>
+    </div>`).join('');
+}
+
+/* Ejecuta una escritura y confirma que sí se guardó. Si el permiso
+   no existe (falta correr sql/zonas-envio.sql) avisa y no deja creer
+   que se guardó. */
+async function guardarEnvios(promesa, msgOk) {
+  const { data, error } = await promesa.select('id');
+  if (error) {
+    avisoEnviosFalta();
+    aviso('No se pudo guardar: ' + (error.message || 'error'), 'error');
+    return false;
+  }
+  if (!data || !data.length) {
+    avisoEnviosFalta();
+    aviso('No se pudo guardar. Corre sql/zonas-envio.sql', 'error');
+    return false;
+  }
+  if (msgOk) aviso(msgOk);
+  return true;
+}
+
+/* ── Modal para agregar / editar una zona ── */
+
+let zonaBorrar = null;
+
+function abrirZona(tipo, id) {
+  const esBarrio = tipo === 'barrio';
+  const lista = esBarrio ? BARRIOS_ADMIN : CIUDADES_ADMIN;
+  const item = id ? lista.find(x => String(x.id) === String(id)) : null;
+
+  document.getElementById('zona-tipo').value = tipo;
+  document.getElementById('zona-id').value = id || '';
+
+  const nombre = document.getElementById('zona-nombre');
+  const extra = document.getElementById('zona-extra');
+
+  document.getElementById('zona-titulo').textContent =
+    (item ? 'Editar ' : 'Agregar ') + (esBarrio ? 'barrio' : 'ciudad');
+  document.getElementById('zona-sub').textContent = esBarrio
+    ? 'El valor del domicilio que se cobra en Cartagena para ese barrio.'
+    : 'Ciudades fuera de Cartagena. El envío se cotiza aparte.';
+  document.getElementById('zona-nombre-label').textContent =
+    esBarrio ? 'Nombre del barrio' : 'Ciudad / Municipio';
+  document.getElementById('zona-extra-label').textContent =
+    esBarrio ? 'Valor del domicilio' : 'Departamento';
+
+  nombre.value = item ? (item.nombre || '') : '';
+  if (esBarrio) {
+    extra.placeholder = '10.000';
+    extra.inputMode = 'numeric';
+    extra.oninput = function () { miles(extra); };
+    extra.value = item ? Number(item.valor_domicilio || 0).toLocaleString('es-CO') : '';
+  } else {
+    extra.placeholder = 'Ej: Bolívar';
+    extra.inputMode = 'text';
+    extra.oninput = null;
+    extra.value = item ? (item.departamento || '') : '';
+  }
+
+  abrirModal('modal-zona');
+  setTimeout(() => nombre.focus(), 60);
+}
+
+async function guardarZona() {
+  const tipo = document.getElementById('zona-tipo').value;
+  const id = document.getElementById('zona-id').value;
+  const esBarrio = tipo === 'barrio';
+  const nombre = document.getElementById('zona-nombre').value.trim();
+  if (!nombre) { aviso(esBarrio ? 'Escribe el nombre del barrio' : 'Escribe la ciudad', 'warn'); return; }
+
+  const btn = document.getElementById('zona-guardar');
+  btn.disabled = true;
+
+  let ok;
+  if (esBarrio) {
+    const valor = Number(String(document.getElementById('zona-extra').value).replace(/\D/g, '')) || 0;
+    const datos = { nombre, valor_domicilio: valor };
+    ok = await guardarEnvios(
+      id ? sb.from('barrios_cartagena').update(datos).eq('id', id)
+         : sb.from('barrios_cartagena').insert(datos),
+      id ? 'Barrio actualizado' : 'Barrio agregado'
+    );
+  } else {
+    const departamento = document.getElementById('zona-extra').value.trim();
+    const datos = { nombre, departamento };
+    ok = await guardarEnvios(
+      id ? sb.from('ciudades_colombia').update(datos).eq('id', id)
+         : sb.from('ciudades_colombia').insert(datos),
+      id ? 'Ciudad actualizada' : 'Ciudad agregada'
+    );
+  }
+
+  btn.disabled = false;
+  if (ok) { modalCerrar(); await cargarEnvios(); }
+}
+
+function pedirBorrarZona(tipo, id) {
+  zonaBorrar = { tipo, id };
+  const esBarrio = tipo === 'barrio';
+  const lista = esBarrio ? BARRIOS_ADMIN : CIUDADES_ADMIN;
+  const item = lista.find(x => String(x.id) === String(id));
+  document.getElementById('conf-titulo').textContent =
+    esBarrio ? '¿Eliminar este barrio?' : '¿Eliminar esta ciudad?';
+  document.getElementById('conf-texto').textContent =
+    `Se quitará "${item?.nombre || ''}" de las zonas de envío. Esta acción no se puede deshacer.`;
+  document.getElementById('conf-btn').textContent = 'Sí, eliminar';
+  document.getElementById('conf-btn').onclick = borrarZonaConfirmada;
+  abrirModal('modal-confirmar');
+}
+
+async function borrarZonaConfirmada() {
+  if (!zonaBorrar) return;
+  const { tipo, id } = zonaBorrar;
+  const esBarrio = tipo === 'barrio';
+  const tabla = esBarrio ? 'barrios_cartagena' : 'ciudades_colombia';
+  const ok = await guardarEnvios(
+    sb.from(tabla).delete().eq('id', id),
+    esBarrio ? 'Barrio eliminado' : 'Ciudad eliminada'
+  );
+  zonaBorrar = null;
+  modalCerrar();
+  await cargarEnvios();
 }
 
 /* ── Arranque ────────────────────────────────── */

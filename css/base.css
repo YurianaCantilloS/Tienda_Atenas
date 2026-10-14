@@ -42,13 +42,18 @@ h1, h2, h3, h4, .titulo-gordito { font-family: var(--font-titulo); font-weight: 
   font-weight: 600; font-size: 14px; cursor: pointer; flex-shrink: 0;
   display: flex; align-items: center; gap: 8px; transition: background 0.2s;
 }
+@media (max-width: 600px) {
+  .cart-btn { padding: 8px 14px; font-size: 12.5px; gap: 6px; }
+  .cart-btn .icon-svg { width: 16px; height: 16px; }
+}
 @media (max-width: 420px) {
   .header { padding: 8px 14px; }
   .header-logo .logo-circle { width: 34px; height: 34px; }
   .header-logo h1 { font-size: 14px; }
   .header-logo span { font-size: 8.5px; letter-spacing: 0.5px; }
-  .cart-btn { padding: 8px 14px; font-size: 12px; gap: 6px; }
-  .cart-btn .icon-svg { width: 14px; height: 14px; }
+  .cart-btn { padding: 5px 10px; font-size: 11px; gap: 4px; }
+  .cart-btn .icon-svg { width: 13px; height: 13px; }
+  .cart-btn .cart-count { min-width: 15px; height: 15px; font-size: 9.5px; padding: 0 4px; }
 }
 .cart-btn:hover { background: var(--lila-dark); }
 .cart-count {

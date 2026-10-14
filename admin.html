@@ -122,9 +122,19 @@
       <span class="nav-badge" id="badge-pedidos" style="display:none;">0</span>
     </button>
 
+    <button class="nav-item" data-page="envios" onclick="irA('envios')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      Envíos
+    </button>
+
     <button class="nav-item" data-page="pagina" onclick="irA('pagina')">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
       Apariencia
+    </button>
+
+    <button class="nav-item" data-page="enlaces" onclick="irA('enlaces')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+      Enlaces
     </button>
   </aside>
 
@@ -225,6 +235,43 @@
       </div>
 
       <div id="lista-pedidos"></div>
+    </section>
+
+
+    <!-- ─── ENVÍOS ─── -->
+    <section class="page" id="page-envios">
+      <div class="page-head">
+        <div>
+          <h1>Envíos</h1>
+        </div>
+        <div class="page-head-actions">
+          <button class="btn btn-linea" onclick="cargarEnvios()">Actualizar</button>
+        </div>
+      </div>
+
+      <div class="aviso aviso-amarillo" id="aviso-envios" style="display:none;">
+        Falta correr <code>sql/zonas-envio.sql</code> en el SQL Editor de Supabase para poder <b>agregar o editar</b> zonas. Mientras tanto aparecen las que ya existen, pero no se pueden guardar.
+      </div>
+
+      <div class="envios-grid">
+        <div class="envios-card">
+          <div class="envios-card-head">
+            <h3>Barrios de Cartagena <span class="envios-n" id="envios-n-barrios"></span></h3>
+            <button class="btn btn-primario btn-mini" onclick="abrirZona('barrio')">+ Agregar</button>
+          </div>
+          <p class="envios-sub">Ajusta el valor del domicilio de cada barrio.</p>
+          <div id="lista-barrios" class="envios-lista"></div>
+        </div>
+
+        <div class="envios-card">
+          <div class="envios-card-head">
+            <h3>Ciudades <span class="envios-n" id="envios-n-ciudades"></span></h3>
+            <button class="btn btn-primario btn-mini" onclick="abrirZona('ciudad')">+ Agregar</button>
+          </div>
+          <p class="envios-sub">Ciudades y municipios fuera de Cartagena. El envío se cotiza aparte.</p>
+          <div id="lista-ciudades" class="envios-lista"></div>
+        </div>
+      </div>
     </section>
 
 
@@ -403,6 +450,116 @@
       </div>
     </section>
 
+    <!-- ─── ENLACES (página tipo Linktree) ─── -->
+    <section class="page" id="page-enlaces">
+      <div class="page-head">
+        <div>
+          <h1>Enlaces</h1>
+        </div>
+        <div class="page-head-actions">
+          <a class="btn btn-linea" id="lk-ver" href="https://tienda-atenas.vercel.app/links.html" target="_blank" rel="noopener">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Ver mi página
+          </a>
+        </div>
+      </div>
+
+      <div class="ap-layout">
+
+        <div class="ap-formulario">
+
+          <div class="aviso aviso-amarillo" id="aviso-links" style="display:none;">
+            Todavía no has corrido el SQL de enlaces.
+            Copia <code>sql/pagina-links.sql</code> en el SQL Editor de Supabase y dale Run.
+          </div>
+
+          <div class="chart-card">
+            <h3>Fondo de la página</h3>
+            <p class="sub">La imagen que se ve detrás de tus botones.</p>
+
+            <div class="field-row" style="align-items:flex-end;">
+              <div class="field" style="flex:1;">
+                <label>Imagen de fondo</label>
+                <div class="drop drop-banner" data-destino="lk-fondo">
+                  <input type="file" accept="image/*" hidden>
+                  <div class="drop-msg">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                    <span>Arrastra el fondo aquí<br><small>o haz clic para buscarlo</small></span>
+                  </div>
+                  <img class="drop-prev" alt="" hidden>
+                  <span class="drop-cambiar">Cambiar foto</span>
+                  <span class="drop-estado"></span>
+                </div>
+                <input type="hidden" id="lk-fondo">
+              </div>
+              <div class="field" style="width:150px;">
+                <button class="btn btn-linea btn-mini btn-block" onclick="quitarFondoLinks()">Quitar fondo</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h3>Textos de arriba</h3>
+            <p class="sub">Lo que se lee debajo del logo.</p>
+            <div class="field">
+              <label>Nombre</label>
+              <input type="text" id="lk-marca" oninput="preverLinks()">
+            </div>
+            <div class="field-row">
+              <div class="field">
+                <label>Usuario de Instagram</label>
+                <input type="text" id="lk-handle" oninput="preverLinks()" placeholder="@atenas.style_ctg" autocomplete="off">
+              </div>
+              <div class="field">
+                <label>Frase corta (arriba)</label>
+                <input type="text" id="lk-subtagline" oninput="preverLinks()" placeholder="Compra fácil · Paga al recibir">
+              </div>
+            </div>
+            <div class="field">
+              <label>Descripción (en cursiva)</label>
+              <input type="text" id="lk-tagline" oninput="preverLinks()" placeholder="Bodega mayorista de productos de belleza">
+            </div>
+            <div class="field">
+              <label>Frase del pie</label>
+              <input type="text" id="lk-pie" oninput="preverLinks()" placeholder="Elegancia que se siente, estilo que se vive.">
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <h3>Botones de enlaces</h3>
+            <p class="sub">Cada botón de tu página. Cambia el ícono, el texto o el link.</p>
+            <div id="lk-lista-editor"></div>
+            <button class="btn btn-linea btn-block" style="margin-top:6px;" onclick="agregarLink()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Agregar botón
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Vista previa -->
+        <aside class="ap-lado">
+          <div class="ap-lado-sticky">
+            <div class="ap-caja">
+              <span class="ap-etiqueta">Así se ve tu página de enlaces</span>
+              <div class="ap-visor ap-visor-tel">
+                <div class="ap-visor-barra"><i></i><i></i><i></i><b>Enlaces</b></div>
+                <iframe id="lk-if" src="links.html" title="Tu página de enlaces" onload="repintarLinks()"></iframe>
+              </div>
+            </div>
+
+            <p class="ap-nota">Comparte este enlace en tu Instagram y biografía:
+              <br><a href="https://tienda-atenas.vercel.app/links.html" target="_blank" rel="noopener" class="ap-link" id="lk-url">https://tienda-atenas.vercel.app/links.html</a></p>
+
+            <div class="ap-guardar">
+              <button class="btn btn-primario btn-block" onclick="guardarLinks()">Guardar y publicar</button>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -494,17 +651,6 @@
       </div>
     </div>
 
-    <div class="field" id="mp-nuevo-campo">
-      <label class="switch-label">
-        <label class="switch">
-          <input type="checkbox" id="mp-nuevo">
-          <span class="slider"></span>
-        </label>
-        <span>Marcar como <b>Destacado</b> ★</span>
-      </label>
-      <p class="field-hint">Sale de primero cuando el orden de la tienda es "Destacados".</p>
-    </div>
-
     <div class="modal-acciones">
       <button class="btn btn-linea" onclick="modalCerrar()">Cancelar</button>
       <button class="btn btn-primario" id="mp-guardar-btn" onclick="guardarProducto()">Guardar</button>
@@ -523,6 +669,34 @@
     <div class="modal-acciones">
       <button class="btn btn-linea" onclick="modalCerrar()">Cancelar</button>
       <button class="btn btn-peligro" id="conf-btn">Sí, continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL: ZONA DE ENVÍO ══════════════ -->
+<div class="modal-fondo" id="modal-zona" onclick="if(event.target===this)modalCerrar()">
+  <div class="modal" style="max-width:420px;">
+    <button class="modal-close" onclick="modalCerrar()">&times;</button>
+    <h2 id="zona-titulo">Agregar zona</h2>
+    <p class="sub" id="zona-sub"></p>
+    <input type="hidden" id="zona-tipo">
+    <input type="hidden" id="zona-id">
+
+    <div class="field">
+      <label id="zona-nombre-label">Nombre</label>
+      <input type="text" id="zona-nombre" maxlength="90" autocomplete="off"
+             onkeydown="if(event.key==='Enter')guardarZona()">
+    </div>
+
+    <div class="field">
+      <label id="zona-extra-label">Valor del domicilio</label>
+      <input type="text" id="zona-extra" autocomplete="off"
+             onkeydown="if(event.key==='Enter')guardarZona()">
+    </div>
+
+    <div class="modal-acciones">
+      <button class="btn btn-linea" onclick="modalCerrar()">Cancelar</button>
+      <button class="btn btn-primario" id="zona-guardar" onclick="guardarZona()">Guardar</button>
     </div>
   </div>
 </div>

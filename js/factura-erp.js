@@ -7,8 +7,14 @@ const LOGO_DATA = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAJYCAYAAAC
    Requiere NEGOCIO (config.js) y PEDIDOS/PRODUCTOS (admin.js).
    ============================================================ */
 
-function showToast(msg, tipo){
-  if(typeof aviso === 'function') aviso(msg, tipo || 'ok');
+/* Aviso propio de la factura. En el panel (admin.html) existe aviso();
+   en la tienda usamos el showToast() de utils.js. Antes esta función se
+   llamaba showToast y sobrescribía la de utils.js en la tienda, dejando
+   mudos todos los avisos del checkout (por eso el botón parecía no hacer
+   nada al faltar un dato). */
+function avisoFactura(msg, tipo){
+  if (typeof aviso === 'function') { aviso(msg, tipo || 'ok'); return; }
+  if (typeof window.showToast === 'function') { window['showToast'](msg, tipo || 'check'); }
 }
 
 /* Logo en data-URL (assets/Logo.png de config.js), con respaldo
@@ -421,14 +427,14 @@ async function renderPaginaFactura(cont, datos, tipo, pagina, escala){
 async function construirFacturaPDF({titulo, fecha, cliente, telefono, metodoPago, items, descuento, total, numero, domicilio, proveedorFoto}){
   const { jsPDF } = window.jspdf;
   if(!window.html2canvas){
-    showToast('No se pudo generar la factura (falta html2canvas)', 'error');
+    avisoFactura('No se pudo generar la factura (falta html2canvas)', 'error');
     return { blob: new jsPDF().output('blob'), canvases: [] };
   }
 
   const isMobile = window.innerWidth <= 768;
   const ESCALA = isMobile ? 1.4 : 2;
 
-  showToast('Generando factura…', 'ok');
+  avisoFactura('Generando factura…', 'ok');
   const logo = await logoMini();
   const rows = await Promise.all((items || []).map(async it => ({
     nombre: it.nombre,
@@ -625,7 +631,7 @@ function descargarFacturaArchivo(){
    el PDF adjunto (navigator.share); en escritorio abre WhatsApp Web, ya que
    el navegador no permite adjuntar el archivo automáticamente. */
 async function compartirWhatsApp(){
-  if(!window._facturaPdfBlob){ showToast('Primero genera la factura', 'error'); return; }
+  if(!window._facturaPdfBlob){ avisoFactura('Primero genera la factura', 'error'); return; }
   const nombreArchivo = (window._facturaNombre || 'factura') + '.pdf';
   const isMobile = window.innerWidth <= 768;
 
@@ -639,10 +645,10 @@ async function compartirWhatsApp(){
         if(e.name === 'AbortError') return;
       }
     }
-    showToast('Descarga el PDF y adjúntalo desde WhatsApp', 'error');
+    avisoFactura('Descarga el PDF y adjúntalo desde WhatsApp', 'error');
   } else {
     window.open('https://web.whatsapp.com', '_blank');
-    showToast('Abriendo WhatsApp Web — adjunta el PDF que descargaste', 'info');
+    avisoFactura('Abriendo WhatsApp Web — adjunta el PDF que descargaste', 'info');
   }
 }
 
@@ -669,7 +675,7 @@ function numeroFactura(id){
 /* ── Botón "Factura" del panel de pedidos ─────── */
 async function generarFacturaPedido(id){
   const p = (typeof PEDIDOS !== 'undefined' ? PEDIDOS : []).find(x => x.id === id);
-  if(!p){ showToast('No se encontró el pedido', 'error'); return; }
+  if(!p){ avisoFactura('No se encontró el pedido', 'error'); return; }
 
   const fecha = new Date(p.created_at || Date.now()).toLocaleDateString('es-CO', {
     day: 'numeric', month: 'long', year: 'numeric'
@@ -710,7 +716,7 @@ async function generarFacturaPedido(id){
     mostrarFacturaPDF(pdfBlob, nombreArchivo);
   } catch(e){
     cerrarFacturaPreview();
-    showToast('No se pudo generar la factura: ' + (e.message || e), 'error');
+    avisoFactura('No se pudo generar la factura: ' + (e.message || e), 'error');
     console.error(e);
   }
 }

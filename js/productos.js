@@ -122,17 +122,16 @@ function renderProductos() {
 
     return `
       <div class="prod-card ${agotado ? 'sin-stock' : ''}">
-        <div class="prod-img" onclick="${agotado ? '' : `abrirModal('${p.id}')`}">
+        <div class="prod-img" onclick="${agotado ? 'sonidoNoDisponible()' : `abrirModal('${p.id}')`}">
           ${imgHtml}
           ${agotado ? `
           <div class="sin-stock-overlay">
             <span class="sin-stock-badge">Sin stock</span>
-            <span class="sin-stock-sub">Regresaré pronto ${ICONS.heart}</span>
+            <span class="sin-stock-sub">Regresaré pronto</span>
           </div>` : ''}
-          ${p.nuevo_ingreso ? '<span class="destacado-badge">&#9733; Destacado</span>' : ''}
         </div>
         <div class="prod-info">
-          <div class="prod-nombre" onclick="${agotado ? '' : `abrirModal('${p.id}')`}">${p.nombre}</div>
+          <div class="prod-nombre" onclick="${agotado ? 'sonidoNoDisponible()' : `abrirModal('${p.id}')`}">${p.nombre}</div>
           <div class="prod-footer">
             <div class="prod-precio">
             ${formatCOP(p.precio)}

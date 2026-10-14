@@ -227,6 +227,11 @@ async function enviarPedido() {
     contraentrega: 'Contra Entrega'
   }[metodoPago] || metodoPago;
 
+  /* Abrimos la pestaña de WhatsApp ya, dentro del clic del usuario, para que
+     el navegador no la bloquee como ventana emergente mientras se guarda el
+     pedido. Luego le cambiamos la dirección al enlace de WhatsApp. */
+  const ventanaWA = window.open('', '_blank');
+
   /* Primero se guarda en el panel (para no perderlo si cierra la pestaña),
      y el código del pedido se incluye en el mensaje de WhatsApp. */
   const codigo = await guardarPedido(
@@ -274,7 +279,9 @@ async function enviarPedido() {
     `Quedo atenta a la Confirmaci\u00f3n ${e3}`,
   ].filter(l => l !== null).join('\n');
 
-  window.open(`https://api.whatsapp.com/send?phone=${NEGOCIO.whatsapp}&text=${encodeURIComponent(lineas)}`, '_blank');
+  const urlWA = `https://api.whatsapp.com/send?phone=${NEGOCIO.whatsapp}&text=${encodeURIComponent(lineas)}`;
+  if (ventanaWA && !ventanaWA.closed) ventanaWA.location.href = urlWA;
+  else window.open(urlWA, '_blank');
   sonidoCaja();
 
   cerrarCheckout();
