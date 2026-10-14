@@ -3,7 +3,7 @@
    ============================================================ */
 
 let metodoPago = 'efectivo';
-let ubicacionCartagena = true;
+let ubicacionCartagena = null;
 let domicilioActual = 0;
 let nombreBarrioActual = '';
 let BARRIOS = [];
@@ -97,8 +97,8 @@ function seleccionarUbicacion(esCartagena) {
   ubicacionCartagena = esCartagena;
   document.getElementById('opt-ciudad-si').classList.toggle('selected', esCartagena);
   document.getElementById('opt-ciudad-no').classList.toggle('selected', !esCartagena);
-  document.getElementById('bloque-cartagena').style.display = esCartagena ? 'block' : 'none';
-  document.getElementById('bloque-fuera').style.display = esCartagena ? 'none' : 'block';
+  document.getElementById('bloque-cartagena').style.display = esCartagena ? 'grid' : 'none';
+  document.getElementById('bloque-fuera').style.display = esCartagena ? 'none' : 'grid';
   document.getElementById('metodo-cartagena').style.display = esCartagena ? 'block' : 'none';
   document.getElementById('metodo-fuera').style.display = esCartagena ? 'none' : 'block';
   document.getElementById('aviso-envio-fuera').style.display = esCartagena ? 'none' : 'block';
@@ -275,6 +275,25 @@ async function enviarPedido() {
   ].filter(l => l !== null).join('\n');
 
   window.open(`https://api.whatsapp.com/send?phone=${NEGOCIO.whatsapp}&text=${encodeURIComponent(lineas)}`, '_blank');
+  sonidoCaja();
+  // Notificar a webhook opcional si está configurado
+  try {
+    if (NEGOCIO.webhookPedidos) {
+      fetch(NEGOCIO.webhookPedidos, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: 'nuevo_pedido',
+          codigo,
+          datos: datos,
+          carrito: [...carrito],
+          totales: { subtotal, descuento, domicilio, total },
+          pagoLabel
+        }),
+        mode: 'cors'
+      }).catch(() => {});
+    }
+  } catch (e) {}
   cerrarCheckout();
 
   window._ultimoPedido = {
@@ -304,10 +323,30 @@ async function descargarFacturaPedido() {
   if (!window._ultimoPedido) return;
   const { codigo, datosCliente, items, totales } = window._ultimoPedido;
   try {
-    const pdfData = await generarFacturaPDF(datosCliente, items, totales, codigo);
+    const fecha = new Date().toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+    const pdfBlob = await construirFacturaPDF({
+      titulo: 'Comprobante de Venta',
+      fecha,
+      cliente: datosCliente.nombre,
+      telefono: datosCliente.tel,
+      metodoPago: datosCliente.pagoLabel,
+      numero: String(codigo || '').replace(/[^0-9A-Za-z]/g, '') || '000000',
+      items: items.map(i => ({
+        nombre: i.nombre,
+        cantidad: Number(i.cantidad) || 0,
+        precio: Number(i.precio) || 0,
+        subtotal: Number(i.precio) * Number(i.cantidad),
+        foto: i.foto_url || null,
+        desc: i.categoria || ''
+      })),
+      descuento: Number(totales.descuento) || 0,
+      domicilio: Number(totales.domicilio) || 0,
+      total: Number(totales.total) || 0
+    });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(pdfData.blob);
-    a.download = pdfData.nombreArchivo;
+    a.href = URL.createObjectURL(pdfBlob);
+    const nombreArchivo = `Factura_${String(codigo || '').replace(/[^0-9A-Za-z]/g, '') || 'pedido'}_${datosCliente.nombre.replace(/\s+/g, '_')}.pdf`;
+    a.download = nombreArchivo;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -326,6 +365,7 @@ function validarFormulario() {
 
   if (!nombre) { showToast('Falta tu nombre', 'warn'); return null; }
   if (!tel) { showToast('Falta tu WhatsApp', 'warn'); return null; }
+  if (ubicacionCartagena === null) { showToast('Elige si estás en Cartagena o fuera', 'warn'); return null; }
 
 let ciudad, direccion, cedula = '', barrio = '', referencia = '';
 

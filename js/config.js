@@ -7,6 +7,9 @@ const SUPABASE_KEY = 'sb_publishable_OzxgAMu9ENo_3ASV0xjvag_Cms2VpYr';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* Dirección pública de la tienda en Vercel (enlaces compartibles) */
+const SITIO_URL = 'https://tienda-atenas.vercel.app';
+
 /* Datos del negocio (usados en checkout y factura PDF) */
 const NEGOCIO = {
   nombre: 'Atenas Style Shop',
@@ -15,4 +18,5 @@ const NEGOCIO = {
   whatsapp: '573184346975',
   instagram: '@atenas.style_ctg',
   logo: 'assets/Logo.png',
+  webhookPedidos: '' // URL opcional (n8n, Zapier, Make...) para notificar nuevo pedido
 };
