@@ -89,30 +89,30 @@
 /* MODAL CHECKOUT */
 .checkout-modal {
   position: fixed; inset: 0; background: rgba(58,42,69,0.55); z-index: 400;
-  display: flex; align-items: center; justify-content: center; padding: 10px;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
   opacity: 0; pointer-events: none; transition: opacity 0.3s;
 }
 .checkout-modal.open { opacity: 1; pointer-events: all; }
 .checkout-box {
-  position: relative; background: #fff; border-radius: 20px; width: 100%; max-width: 520px;
-  max-height: calc(100dvh - 20px); overflow-y: auto; padding: 14px 14px 10px;
+  position: relative; background: #fff; border-radius: 24px; width: 100%; max-width: 520px;
+  max-height: 90vh; overflow-y: auto; padding: 32px 24px 24px;
   transform: translateY(20px) scale(0.97); transition: transform 0.3s;
 }
 .checkout-modal.open .checkout-box { transform: translateY(0) scale(1); }
 .checkout-box, .checkout-box * { box-sizing: border-box; }
-.checkout-box h3 { font-size: 18px; font-weight: 700; margin: 0 32px 8px 0; display: flex; align-items: center; gap: 8px; }
-.form-group { margin-bottom: 8px; }
+.checkout-box h3 { font-size: 22px; font-weight: 700; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.form-group { margin-bottom: 14px; }
 .form-group:last-child { margin-bottom: 0; }
 .form-group label {
-  display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .6px;
-  color: var(--gris-70); font-weight: 700; margin-bottom: 3px; font-family: var(--font-texto);
+  display: block; font-size: 12px; font-weight: 700; color: var(--gris-60);
+  text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; font-family: var(--font-texto);
 }
 .form-group input, .form-group select, .form-group textarea {
-  width: 100%; padding: 9px 11px; border: 1.5px solid var(--gris-30); border-radius: 12px;
+  width: 100%; padding: 12px 14px; border: 1.5px solid var(--gris-30); border-radius: 12px;
   font-family: var(--font-texto); font-size: 14px; outline: none; transition: border-color 0.2s; background: #fff;
 }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--rosa-dark); }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
 /* Los bloques de ubicación van en rejilla de 2 columnas (el primer
    campo ocupa todo el ancho) para no tener que hacer scroll. */
@@ -153,13 +153,9 @@
 .pago-opt-sm .icon-svg { margin: 0 5px 0 0; }
 
 /* En pantallas bajas se aprieta un poco más para que no haya scroll. */
-@media (max-height: 720px) {
-  .checkout-box { padding: 12px 14px 10px; }
-  .checkout-box h3 { font-size: 16px; margin-bottom: 6px; }
-  .form-group { margin-bottom: 3px; }
-  .form-group input, .form-group select, .form-group textarea { padding: 7px 10px; }
+@media (max-height: 720px) {}
   .resumen-pedido { margin: 5px 0; padding: 9px 11px; }
-  .btn-enviar-pedido { padding: 10px; margin-top: 5px; }
+  .btn-enviar-pedido { padding: 16px; margin-top: 5px; }
 }
 
 /* Selector de barrio/ciudad más bajo dentro del checkout */
