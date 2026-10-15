@@ -255,6 +255,11 @@
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
+<!-- BOTÓN VOLVER ARRIBA -->
+<button class="btn-scroll-top" id="btn-scroll-top" aria-label="Volver al inicio">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+</button>
+
 <!-- AVISO AL POR MAYOR (centrado) -->
 <div class="checkout-modal" id="aviso-mayor" onclick="if(event.target===this)cerrarAvisoMayor()">
   <div class="checkout-box aviso-box">
@@ -283,6 +288,7 @@
 <script src="js/checkout.js"></script>
 <script src="js/factura-erp.js"></script>
 <script src="js/catalogo-pdf.js"></script>
+<script src="js/scroll-top.js"></script>
 
 <script>
   lucide.createIcons();

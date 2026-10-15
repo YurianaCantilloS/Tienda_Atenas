@@ -116,6 +116,11 @@
       Productos
     </button>
 
+    <button class="nav-item" data-page="categorias" onclick="irA('categorias')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      Categorías
+    </button>
+
     <button class="nav-item" data-page="pedidos" onclick="irA('pedidos')">
       <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
       Pedidos
@@ -214,6 +219,40 @@
       </div>
 
       <div id="lista-productos"></div>
+    </section>
+
+    <!-- ─── CATEGORÍAS ─── -->
+    <section class="page" id="page-categorias">
+      <div class="page-head">
+        <div>
+          <h1>Categorías</h1>
+        </div>
+        <div class="page-head-actions">
+          <button class="btn btn-primario" onclick="abrirModalCategoria()">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Agregar categoría
+          </button>
+        </div>
+      </div>
+
+      <div class="aviso aviso-amarillo" id="aviso-categorias" style="display:none;">
+        Falta correr <code>sql/categorias.sql</code> en el SQL Editor de Supabase para poder agregar o editar categorías.
+        Mientras tanto se muestran las que ya existen, pero no se pueden guardar.
+      </div>
+
+      <p class="cats-nota">
+        Las categorías que agregues aquí aparecen al crear productos en el panel, en los filtros de la tienda
+        y también en el ERP (es la misma base de datos).
+      </p>
+
+      <div class="envios-card">
+        <div class="envios-card-head">
+          <h3>Lista de categorías <span class="envios-n" id="cats-n"></span></h3>
+          <button class="btn btn-primario btn-mini" onclick="abrirModalCategoria()">+ Agregar</button>
+        </div>
+        <p class="envios-sub">Arréstralas con los botones de subir/bajar para ordenar cómo se ven en la tienda.</p>
+        <div id="lista-categorias" class="envios-lista"></div>
+      </div>
     </section>
 
     <!-- ─── PEDIDOS ─── -->
@@ -660,6 +699,28 @@
 
 
 
+<!-- ══════════════ MODAL: CATEGORÍA ══════════════ -->
+<div class="modal-fondo" id="modal-categoria" onclick="if(event.target===this)modalCerrar()">
+  <div class="modal" style="max-width:420px;">
+    <button class="modal-close" onclick="modalCerrar()">&times;</button>
+    <h2 id="cat-titulo">Agregar categoría</h2>
+    <p class="sub">Se usará en el panel, en la tienda y en el ERP.</p>
+    <input type="hidden" id="cat-id">
+
+    <div class="field">
+      <label>Nombre de la categoría *</label>
+      <input type="text" id="cat-nombre" maxlength="40" placeholder="Ej: Cuidado del cabello"
+             onkeydown="if(event.key==='Enter')guardarCategoria()">
+      <p class="field-hint">Así la verán tus clientes (ej: Capilar, Facial...)</p>
+    </div>
+
+    <div class="modal-acciones">
+      <button class="btn btn-linea" onclick="modalCerrar()">Cancelar</button>
+      <button class="btn btn-primario" id="cat-guardar" onclick="guardarCategoria()">Guardar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════ MODAL: CONFIRMAR ══════════════ -->
 <div class="modal-fondo" id="modal-confirmar" onclick="if(event.target===this)modalCerrar()">
   <div class="modal" style="max-width:420px;">
@@ -703,6 +764,11 @@
 
 <div class="toast" id="toast"></div>
 
+<!-- BOTÓN VOLVER ARRIBA -->
+<button class="btn-scroll-top" id="btn-scroll-top" aria-label="Volver al inicio">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+</button>
+
 <!-- ══════════════ SCRIPTS ══════════════ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -723,7 +789,6 @@
       </span>
       <div class="factura-botones">
         <button class="btn btn-mini btn-primario factura-btn-descargar" onclick="descargarFacturaArchivo()">Descargar PDF</button>
-        <button class="btn btn-mini btn-whatsapp" onclick="compartirWhatsApp()" title="Enviar la factura por WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12 12 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884a9.82 9.82 0 0 1 6.99 2.898 9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.885-9.885 9.885M20.52 3.449C18.24 1.245 15.24 0 12.045 0 5.463 0 .104 5.359.101 11.945c0 2.096.548 4.142 1.588 5.945L0 24l6.305-1.654a11.9 11.9 0 0 0 5.683 1.448h.005c6.585 0 11.946-5.359 11.949-11.945a11.87 11.87 0 0 0-3.421-8.399"/></svg> WhatsApp</button>
         <button class="modal-close" onclick="cerrarFacturaPreview()">×</button>
       </div>
     </div>
@@ -736,5 +801,6 @@
 <script src="js/admin.js"></script>
 <script src="js/factura-erp.js"></script>
 <script src="js/catalogo-pdf.js"></script>
+<script src="js/scroll-top.js"></script>
 </body>
 </html>

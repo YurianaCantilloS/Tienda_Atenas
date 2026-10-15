@@ -871,6 +871,7 @@ a { color: var(--lila-dark); }
 }
 .ped-btn .ic { display: inline-flex; }
 .ped-btn .ic svg { width: 15px; height: 15px; }
+.ped-wa-short { display: none; }
 .ped-btn:hover { transform: translateY(-2px); }
 .ped-btn:active { transform: translateY(0); }
 
@@ -1157,16 +1158,20 @@ a { color: var(--lila-dark); }
   /* Modales a pantalla completa con margen */
   .modal { width: 94vw; max-height: 90vh; }
   .modal-factura { width: 96vw; }
-  #factura-iframe { height: 68vh; }
   .factura-titulo { font-size: 13px; }
-  .factura-botones .btn { padding: 7px 10px; font-size: 12px; }
-  .factura-btn-descargar { padding: 6px 8px; font-size: 11px; }
+  .factura-barra { padding: 10px 12px; }
+  .factura-botones { gap: 5px; }
+  .factura-botones .btn { padding: 6px 9px; font-size: 11.5px; }
+  .factura-btn-descargar { padding: 5px 8px; font-size: 11px; }
+  #factura-iframe { height: 62vh; }
 
-  /* Botones de pedido (Entregado / Cancelar / Factura) un poco más pequeños */
-  .ped-acciones { gap: 6px; margin-top: 14px; }
-  .ped-btn { padding: 7px 11px; font-size: 11px; gap: 5px; border-radius: 9px; }
-  .ped-btn .ic svg { width: 13px; height: 13px; }
-  .ped-btn-wa .ic svg { width: 14px; height: 14px; }
+  /* Botones de pedido: bien compactos para que quepan en UNA línea */
+  .ped-acciones { gap: 5px; margin-top: 14px; flex-wrap: nowrap; }
+  .ped-btn { padding: 6px 8px; font-size: 10.5px; gap: 4px; border-radius: 9px; flex-shrink: 0; }
+  .ped-btn .ic svg { width: 12px; height: 12px; }
+  .ped-btn-wa .ic svg { width: 13px; height: 13px; }
+  .ped-wa-full { display: none; }
+  .ped-wa-short { display: inline; }
 }
 
 @media (max-width: 360px) {
@@ -1343,3 +1348,34 @@ a { color: var(--lila-dark); }
 .envios-vacio { font-size: 12.5px; color: var(--gris-60); padding: 6px 2px; }
 
 @media (max-width: 1000px) { .envios-grid { grid-template-columns: 1fr; } }
+
+/* ── BOTÓN VOLVER ARRIBA (aparece al hacer scroll) ── */
+.btn-scroll-top {
+  position: fixed; right: 18px; bottom: 24px; z-index: 260;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--gris-30);
+  background: var(--blanco); color: var(--lila-dark);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(58,42,69,.16);
+  opacity: 0; transform: translateY(14px); pointer-events: none;
+  transition: opacity .3s ease, transform .3s ease;
+}
+.btn-scroll-top svg { width: 18px; height: 18px; }
+.btn-scroll-top.visible { opacity: .92; transform: translateY(0); pointer-events: auto; }
+.btn-scroll-top:hover { background: var(--lila-bg); }
+@media (max-width: 600px) {
+  .btn-scroll-top { width: 38px; height: 38px; right: 12px; bottom: 78px; }
+}
+
+/* ══════════ CATEGORÍAS (sección del panel) ══════════ */
+.cats-nota { font-size: 12px; color: var(--gris-60); margin: 4px 0 14px; line-height: 1.5; }
+.cat-move {
+  width: 30px; height: 30px; flex-shrink: 0;
+  display: grid; place-items: center; border-radius: 9px;
+  cursor: pointer; background: var(--blanco); border: 1.5px solid var(--gris-30);
+  color: var(--gris-60); transition: all .15s;
+}
+.cat-move svg { width: 15px; height: 15px; }
+.cat-move:hover:not(:disabled) { border-color: var(--lila); color: var(--lila-dark); background: var(--lila-bg); }
+.cat-move:disabled { opacity: .35; cursor: default; }

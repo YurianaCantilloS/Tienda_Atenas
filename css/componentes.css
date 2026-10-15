@@ -72,3 +72,25 @@
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+/* ── BOTÓN VOLVER ARRIBA (aparece al hacer scroll) ── */
+.btn-scroll-top {
+  position: fixed; right: 16px; bottom: 24px; z-index: 260;
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--gris-30);
+  background: var(--blanco); color: var(--lila-dark);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(58,42,69,.16);
+  opacity: 0; transform: translateY(14px); pointer-events: none;
+  transition: opacity .3s ease, transform .3s ease;
+}
+.btn-scroll-top svg { width: 18px; height: 18px; }
+.btn-scroll-top.visible { opacity: .92; transform: translateY(0); pointer-events: auto; }
+.btn-scroll-top:hover { background: var(--lila-bg); }
+/* Si la franja del carrito está visible, sube para no encimarse */
+.con-carrito .btn-scroll-top { bottom: 80px; }
+@media (max-width: 480px) {
+  .btn-scroll-top { width: 38px; height: 38px; right: 12px; bottom: 20px; }
+  .con-carrito .btn-scroll-top { bottom: 76px; }
+}

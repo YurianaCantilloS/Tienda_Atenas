@@ -237,8 +237,9 @@
 }
 .cart-bar-flecha svg { width: 17px; height: 17px; }
 @media (max-width: 420px) {
-  .cart-bar { left: 10px; right: 10px; transform: translateY(140%); padding: 9px 10px 9px 8px; gap: 8px; }
-  .cart-bar.show { transform: translateY(0); }
+  /* Centrada como en PC: pill de ancho al contenido, no de lado a lado */
+  .cart-bar { left: 50%; right: auto; transform: translate(-50%, 140%); padding: 9px 10px 9px 8px; gap: 8px; }
+  .cart-bar.show { transform: translate(-50%, 0); }
   .cart-bar-texto { font-size: 12px; }
   .cart-bar-total { font-size: 15px; }
 }

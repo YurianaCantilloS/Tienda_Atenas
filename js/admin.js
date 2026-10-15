@@ -11,7 +11,10 @@
    modificar a quien tenga sesión iniciada (ver sql/panel-admin.sql)
    ============================================================ */
 
-const CATEGORIAS = [
+/* Categorías por defecto. La lista real vive en la tabla "categorias"
+   (ver sql/categorias.sql) y se carga con cargarCategorias(); si la
+   tabla no existe, se sigue usando esta. */
+let CATEGORIAS = [
   'capilar', 'facial', 'corporal', 'maquillaje',
   'accesorios', 'electricos', 'varios', 'ropa'
 ];
@@ -293,7 +296,7 @@ async function revisarSesion() {
 
   llenarCategorias();
   cargarAjustes();
-  await Promise.all([cargarProductos(), cargarPedidos()]);
+  await Promise.all([cargarCategorias(), cargarProductos(), cargarPedidos()]);
   cargarResumen();
   return true;
 }
@@ -307,6 +310,7 @@ function irA(pagina) {
     b.classList.toggle('active', b.dataset.page === pagina);
   });
   if (pagina === 'resumen') cargarResumen();
+  if (pagina === 'categorias') cargarCategorias();
   if (pagina === 'envios') cargarEnvios();
   if (pagina === 'enlaces') repintarLinks();
   window.scrollTo(0, 0);
@@ -318,8 +322,13 @@ function irA(pagina) {
 
 function llenarCategorias() {
   const sel = document.getElementById('mp-categoria');
-  sel.innerHTML = CATEGORIAS.map(c =>
-    `<option value="${c}">${c.charAt(0).toUpperCase() + c.slice(1)}</option>`).join('');
+  if (!sel) return;
+  /* Usa la lista de la tabla "categorias" cuando existe; si no, la de respaldo. */
+  const cats = (typeof CATEGORIAS_CFG !== 'undefined' && CATEGORIAS_CFG.length)
+    ? CATEGORIAS_CFG
+    : CATEGORIAS.map(v => ({ valor: v, label: v.charAt(0).toUpperCase() + v.slice(1) }));
+  sel.innerHTML = cats.map(c =>
+    `<option value="${esc(c.valor)}">${esc(c.label || c.valor)}</option>`).join('');
 }
 
 async function cargarProductos() {
@@ -788,7 +797,7 @@ function detallePedido(p) {
       <button class="ped-btn ped-btn-wa${telValido ? '' : ' ped-btn-off'}"
               onclick="event.stopPropagation();escribirWhatsApp('${p.id}')"
               title="${telValido ? 'Escribir al ' + esc(p.telefono) : 'Este pedido no tiene celular'}">
-        <span class="ic">${ICONO_WHATSAPP}</span> Enviar por WhatsApp
+        <span class="ic">${ICONO_WHATSAPP}</span> <span class="ped-wa-full">Enviar por WhatsApp</span><span class="ped-wa-short">WhatsApp</span>
       </button>
 
       <button class="ped-btn ped-btn-factura"
@@ -1214,15 +1223,26 @@ const CLOUDINARY = {
   uploadPreset: 'preset_productos'
 };
 
+/* Datos de GitHub para subir las fotos (los llena el desarrollador).
+   El link público se sirve por jsDelivr:
+   https://cdn.jsdelivr.net/gh/OWNER/REPO@BRANCH/CARPETA/archivo.jpg
+   El TOKEN debe ser un "fine-grained token" con permiso contents:write
+   SOLO sobre este repositorio. */
+const GITHUB = {
+  owner: 'YurianaCantilloS',
+  repo: 'tienda-imagenes',
+  branch: 'main',
+  path: 'imagenes',
+  token: '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'
+};
+
 function ajustes() {
   const a = leerAjustes();
   return {
     nombre: a.nombre || '', ciudad: a.ciudad || '', telefono: a.telefono || '',
     whatsapp: a.whatsapp || '', instagram: a.instagram || '',
-    /* La subida de fotos siempre sale de CLOUDINARY, que es la que ya
-       funciona. Lo que haya quedado guardado en este navegador desde la
-       pantalla vieja de Cloudinary ya no manda nada. */
-    cloudinary: { ...CLOUDINARY }
+    cloudinary: { ...CLOUDINARY },
+    github: { ...GITHUB }
   };
 }
 
@@ -1718,7 +1738,9 @@ async function guardarLinks() {
   LINKS_CFG = cfg;
   localStorage.setItem('atenas_links', JSON.stringify(cfg));
 
-  const { error } = await sb.from('configuracion').update({ links_cfg: cfg }).eq('id', 1);
+  /* upsert: si la fila id=1 no existe, la crea. Antes un update silencioso
+     no hacía nada y la página pública no encontraba los cambios. */
+  const { error } = await sb.from('configuracion').upsert({ id: 1, links_cfg: cfg }, { onConflict: 'id' });
   const box = document.getElementById('aviso-links');
 
   if (error) {
@@ -1745,42 +1767,101 @@ function esImagen(archivo) {
 function mensajeSubida(err) {
   const m = String((err && err.message) || err || '');
   console.error('[subida de foto]', err);
-  if (/upload preset|configur/i.test(m)) return 'Falta configurar la subida de fotos';
+  if (/upload preset|configur|github|token|owner|repo|GitHub|Unauthorized|401|403/i.test(m)) return 'Falta configurar la subida de fotos';
   if (/imagen|image|mime/i.test(m)) return 'Ese archivo no es una imagen';
   if (/failed to fetch|network|conexi|load failed/i.test(m)) return 'Revisa tu conexión a internet';
   if (/too large|file size|mb/i.test(m)) return 'La foto pesa demasiado';
   return 'No se pudo subir: ' + (m || 'error desconocido');
 }
 
-async function subirFotoACloudinary(archivo) {
-  const { cloudName, uploadPreset } = ajustes().cloudinary;
+/* Base64 por trozos: pasar un arreglo gigante a String.fromCharCode
+   revienta el navegador ("Maximum call stack size exceeded"). */
+function bytesABase64(bytes) {
+  let bin = '';
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
+  return btoa(bin);
+}
 
-  if (!uploadPreset) throw new Error('Falta el upload preset de Cloudinary');
+/* Redimensiona/comprime antes de subir: fotos más ligeras = repo más
+   pequeño y nada de "pesa demasiado". Máx 1600px, JPEG 0.85. */
+async function prepararImagenParaSubir(archivo) {
+  try {
+    const tipo = archivo.type || '';
+    if (/gif|svg|webp|avif/i.test(tipo)) return archivo;   /* no tocar animados */
+    if (typeof createImageBitmap !== 'function') return archivo;
+    const bmp = await createImageBitmap(archivo);
+    const max = 1600;
+    const escala = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    if (escala === 1 && archivo.size < 1200000) { if (bmp.close) bmp.close(); return archivo; }
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * escala);
+    c.height = Math.round(bmp.height * escala);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    if (bmp.close) bmp.close();
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.85));
+    return blob || archivo;
+  } catch (e) {
+    return archivo;   /* si algo falla, subimos el original tal cual */
+  }
+}
+
+async function subirFotoAGithub(archivo) {
   if (!esImagen(archivo)) throw new Error('El archivo no es una imagen');
 
-  const cuerpo = new FormData();
-  cuerpo.append('file', archivo);
-  cuerpo.append('upload_preset', uploadPreset);
+  const a = ajustes();
+  const owner = (a.github && a.github.owner) || '';
+  const repo  = (a.github && a.github.repo)  || '';
+  const token = (a.github && a.github.token) || '';
+  const branch = (a.github && a.github.branch) || 'main';
+  const pathBase = (a.github && a.github.path) || 'imagenes';
 
-  let res;
-  try {
-    res = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-      method: 'POST',
-      body: cuerpo
-    });
-  } catch (e) {
-    throw new Error('Failed to fetch');
+  if (!owner || !repo || !token) {
+    throw new Error('Falta configurar GitHub (owner/repo/token) en Ajustes');
   }
 
-  let datos = null;
-  try { datos = await res.json(); } catch (e) { /* la respuesta no era JSON */ }
+  const paraSubir = await prepararImagenParaSubir(archivo);
 
-  if (!res.ok || !datos || datos.error) {
-    throw new Error(datos?.error?.message || ('Cloudinary respondió ' + res.status));
+  // Nombre único (evita el caché de jsDelivr al actualizar)
+  const ext = (paraSubir === archivo && archivo.name && archivo.name.split('.').pop()) || 'jpg';
+  const nombre = 'producto-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+  const ruta = pathBase.replace(/^\/+|\/+$/g, '') + '/' + nombre;
+  const contenido = await paraSubir.arrayBuffer();
+  const base64 = bytesABase64(new Uint8Array(contenido));
+
+  const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${ruta}`, {
+    method: 'PUT',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Accept': 'application/vnd.github+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message: 'Agregar foto ' + nombre,
+      content: base64,
+      branch: branch
+    })
+  });
+
+  if (!res.ok) {
+    let txt = '';
+    try { txt = await res.text(); } catch (e) {}
+    throw new Error('GitHub respondió ' + res.status + ' ' + txt.slice(0, 120));
   }
-  if (!datos.secure_url) throw new Error('Cloudinary no devolvió la foto');
-  return datos.secure_url;
+
+  const data = await res.json();
+  const urlRaw = data && data.content && data.content.download_url;
+  if (urlRaw) {
+    // Mejor usar jsDelivr: https://cdn.jsdelivr.net/gh/owner/repo@branch/path
+    const jsd = `https://cdn.jsdelivr.net/gh/${owner}/${repo}@${branch}/${ruta}`;
+    return jsd;
+  }
+  // fallback
+  return urlRaw || '';
 }
+
 
 function zonaDe(e) {
   let n = e.target;
@@ -1840,7 +1921,7 @@ function procesandoZona(zona, archivo) {
   pintarZona(zona, ''); /* sin texto: mientras sube solo se ve el brillo */
   zona.classList.add('subiendo');
 
-  subirFotoACloudinary(archivo)
+  subirFotoAGithub(archivo)
     .then(url => {
       /* Sin mensajes: aparece la foto nada más */
       pintarZona(zona, '');
@@ -2148,6 +2229,198 @@ async function borrarZonaConfirmada() {
   await cargarEnvios();
 }
 
+/* ══════════════════════════════════════════════
+   CATEGORÍAS (compartidas con la tienda y el ERP)
+   Vive en la tabla "categorias" de la misma base
+   (ver sql/categorias.sql). La tienda y el ERP
+   leen esta misma tabla.
+   ══════════════════════════════════════════════ */
+
+let CATEGORIAS_CFG = [];
+let catBorrar = null;
+
+async function guardarCategoriasDB(promesa, msgOk) {
+  const { data, error } = await promesa.select('id');
+  if (error) {
+    const box = document.getElementById('aviso-categorias');
+    if (box) box.style.display = 'block';
+    aviso('No se pudo guardar: ' + (error.message || 'error'), 'error');
+    return false;
+  }
+  if (!data || !data.length) {
+    const box = document.getElementById('aviso-categorias');
+    if (box) box.style.display = 'block';
+    aviso('No se pudo guardar. Corre sql/categorias.sql', 'error');
+    return false;
+  }
+  if (msgOk) aviso(msgOk);
+  return true;
+}
+
+async function cargarCategorias() {
+  const cont = document.getElementById('lista-categorias');
+  if (!cont) return;
+
+  const { data, error } = await sb.from('categorias')
+    .select('id, valor, label, orden, activa')
+    .order('orden', { ascending: true })
+    .order('id', { ascending: true });
+
+  const box = document.getElementById('aviso-categorias');
+  if (error) {
+    if (box) box.style.display = 'block';
+    CATEGORIAS_CFG = [];
+    cont.innerHTML = `<div class="aviso aviso-rojo" style="margin:0;">
+      No se pudieron cargar las categorías: ${esc(error.message)}
+      <br><br>Falta correr <code>sql/categorias.sql</code> en el SQL Editor de Supabase.
+    </div>`;
+    llenarCategorias();
+    return;
+  }
+  if (box) box.style.display = 'none';
+
+  CATEGORIAS_CFG = data || [];
+  CATEGORIAS = CATEGORIAS_CFG.map(c => c.valor);
+  renderCategorias();
+  llenarCategorias();
+}
+
+function renderCategorias() {
+  const cont = document.getElementById('lista-categorias');
+  const n = document.getElementById('cats-n');
+  if (n) n.textContent = CATEGORIAS_CFG.length ? '(' + CATEGORIAS_CFG.length + ')' : '';
+  if (!cont) return;
+
+  if (!CATEGORIAS_CFG.length) {
+    cont.innerHTML = '<p class="envios-vacio">Todavía no hay categorías. Dale a "Agregar".</p>';
+    return;
+  }
+
+  cont.innerHTML = CATEGORIAS_CFG.map((c, i) => {
+    const enUso = PRODUCTOS.filter(p => p.categoria === c.valor).length;
+    return `
+    <div class="envios-row">
+      <div class="envios-row-info">
+        <span class="envios-nombre">${esc(c.label || '')}${c.activa === false ? ' <small style="color:var(--gris-60);">(oculta)</small>' : ''}</span>
+        <span class="envios-valor" style="color:var(--gris-60);font-weight:600;font-size:11.5px;">
+          ${esc(c.valor || '')} · ${enUso} producto${enUso === 1 ? '' : 's'}
+        </span>
+      </div>
+      <div class="envios-row-acciones">
+        <button class="cat-move" onclick="moverCategoria(${i},-1)" title="Subir" ${i === 0 ? 'disabled' : ''}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+        </button>
+        <button class="cat-move" onclick="moverCategoria(${i},1)" title="Bajar" ${i === CATEGORIAS_CFG.length - 1 ? 'disabled' : ''}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <button class="envios-editar" onclick="abrirModalCategoria('${c.id}')" title="Editar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </button>
+        <button class="envios-del" onclick="pedirBorrarCategoria('${c.id}')" title="Borrar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function abrirModalCategoria(id) {
+  const item = id ? CATEGORIAS_CFG.find(c => String(c.id) === String(id)) : null;
+  document.getElementById('cat-titulo').textContent = item ? 'Editar categoría' : 'Agregar categoría';
+  document.getElementById('cat-id').value = item ? item.id : '';
+  document.getElementById('cat-nombre').value = item ? (item.label || '') : '';
+  abrirModal('modal-categoria');
+  setTimeout(() => document.getElementById('cat-nombre').focus(), 60);
+}
+
+function slugCategoria(txt) {
+  return String(txt || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+async function guardarCategoria() {
+  const id = document.getElementById('cat-id').value;
+  const label = document.getElementById('cat-nombre').value.trim();
+  if (!label) return aviso('Escribe el nombre de la categoría', 'warn');
+
+  const valor = slugCategoria(label);
+  if (!valor) return aviso('El nombre debe tener letras o números', 'warn');
+
+  const duplicada = CATEGORIAS_CFG.find(c => c.valor === valor && String(c.id) !== String(id));
+  if (duplicada) return aviso('Ya existe una categoría con ese nombre', 'error');
+
+  const btn = document.getElementById('cat-guardar');
+  btn.disabled = true;
+
+  let ok;
+  if (id) {
+    ok = await guardarCategoriasDB(
+      sb.from('categorias').update({ label, valor }).eq('id', id),
+      'Categoría actualizada'
+    );
+  } else {
+    const orden = (CATEGORIAS_CFG.length ? Math.max(...CATEGORIAS_CFG.map(c => c.orden || 0)) : 0) + 1;
+    ok = await guardarCategoriasDB(
+      sb.from('categorias').insert({ label, valor, orden, activa: true }),
+      'Categoría agregada'
+    );
+  }
+
+  btn.disabled = false;
+  if (ok) {
+    modalCerrar();
+    await cargarCategorias();
+  }
+}
+
+async function moverCategoria(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= CATEGORIAS_CFG.length) return;
+  const a = CATEGORIAS_CFG;
+  const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  a.forEach((c, k) => { c.orden = k + 1; });
+  renderCategorias();
+
+  const r1 = await sb.from('categorias').update({ orden: a[i].orden }).eq('id', a[i].id);
+  const r2 = await sb.from('categorias').update({ orden: a[j].orden }).eq('id', a[j].id);
+  if (r1.error || r2.error) {
+    aviso('No se pudo guardar el orden. Corre sql/categorias.sql', 'error');
+    await cargarCategorias();
+  }
+}
+
+function pedirBorrarCategoria(id) {
+  const item = CATEGORIAS_CFG.find(c => String(c.id) === String(id));
+  if (!item) return;
+
+  const enUso = PRODUCTOS.filter(p => p.categoria === item.valor).length;
+  if (enUso) {
+    return aviso(`No se puede borrar "${item.label}": tiene ${enUso} producto${enUso === 1 ? '' : 's'}. Cambia esos productos a otra categoría primero.`, 'error');
+  }
+
+  catBorrar = id;
+  document.getElementById('conf-titulo').textContent = '¿Eliminar esta categoría?';
+  document.getElementById('conf-texto').textContent =
+    `Se quitará "${item.label}" de las categorías. Esta acción no se puede deshacer.`;
+  document.getElementById('conf-btn').textContent = 'Sí, eliminar';
+  document.getElementById('conf-btn').onclick = borrarCategoriaConfirmada;
+  abrirModal('modal-confirmar');
+}
+
+async function borrarCategoriaConfirmada() {
+  if (!catBorrar) return;
+  const ok = await guardarCategoriasDB(
+    sb.from('categorias').delete().eq('id', catBorrar),
+    'Categoría eliminada'
+  );
+  catBorrar = null;
+  modalCerrar();
+  if (ok) await cargarCategorias();
+}
+
 /* ── Arranque ────────────────────────────────── */
 
 document.addEventListener('keydown', e => {
@@ -2160,3 +2433,5 @@ sb.auth.onAuthStateChange((event) => {
 });
 
 revisarSesion();
+
+

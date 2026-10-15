@@ -2,8 +2,10 @@
    PRODUCTOS: carga, render, filtros, modal y stepper
    ============================================================ */
 
-const CATEGORIAS = [
- { valor: 'todos', label: 'Todos', icon: true },
+/* Categorías por defecto. La tienda las refresca desde la tabla
+   "categorias" (la misma que usa el panel y el ERP). */
+let CATEGORIAS = [
+ { valor: 'todos', label: 'Todos' },
   { valor: 'capilar', label: 'Capilar' },
   { valor: 'facial', label: 'Facial' },
   { valor: 'corporal', label: 'Corporal' },
@@ -13,6 +15,23 @@ const CATEGORIAS = [
   { valor: 'varios', label: 'Varios' },
   { valor: 'ropa', label: 'Ropa' },
 ];
+
+/* Trae las categorías publicadas en la tabla "categorias".
+   Si la tabla no existe (falta correr sql/categorias.sql),
+   se quedan las de arriba y la tienda sigue funcionando. */
+async function cargarCategoriasTienda() {
+  try {
+    const { data, error } = await sb.from('categorias')
+      .select('valor, label, orden')
+      .eq('activa', true)
+      .order('orden', { ascending: true })
+      .order('id', { ascending: true });
+    if (error || !data || !data.length) return;
+    CATEGORIAS = [{ valor: 'todos', label: 'Todos' }]
+      .concat(data.map(c => ({ valor: c.valor, label: c.label || c.valor })));
+    renderFiltros();
+  } catch (e) { /* sin conexión o sin tabla: se quedan los filtros por defecto */ }
+}
 
 let PRODUCTOS = [];
 let filtroActivo = 'todos';
@@ -200,6 +219,7 @@ function agregarRapido(id) {
 /* ── INIT ── */
 async function initProductos() {
   renderFiltros();
+  await cargarCategoriasTienda();
   PRODUCTOS = await fetchProductos();
   renderProductos();
 }

@@ -150,6 +150,15 @@
 .stepper button:hover { background: var(--rosa-dark); color: #fff; }
 .stepper .stepper-num { font-size: 11px; font-weight: 700; min-width: 12px; text-align: center; }
 
+/* Celular: botón de agregar y stepper un poco más grandes para el dedo */
+@media (max-width: 600px) {
+  .btn-agregar { width: 30px; height: 30px; }
+  .btn-agregar .icon-svg { width: 14px; height: 14px; }
+  .stepper { padding: 3px; gap: 3px; }
+  .stepper button { width: 24px; height: 24px; font-size: 14px; }
+  .stepper .stepper-num { font-size: 12.5px; min-width: 16px; }
+}
+
 /* MODAL PRODUCTO */
 .overlay {
   position: fixed; inset: 0; background: rgba(58,42,69,0.55); z-index: 200;

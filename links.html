@@ -343,8 +343,9 @@
   }
 
   function lkCargar(){
-    if (!(window.sb && window.sb.from)) return;
-    window.sb.from('configuracion').select('links_cfg').eq('id', 1).maybeSingle()
+    var c = window.sb || (typeof sb !== 'undefined' ? sb : null);
+    if (!(c && c.from)) return;
+    c.from('configuracion').select('links_cfg').eq('id', 1).maybeSingle()
       .then(function(res){
         if (res && res.data && res.data.links_cfg) lkAplicar(res.data.links_cfg);
         else lkAplicar(LK_DEF);
@@ -361,8 +362,12 @@
   var enPreview = false;
   try { enPreview = window.self !== window.top; } catch(e){ enPreview = true; }
 
-  if (enPreview) lkAplicar(LK_DEF);   /* el panel manda los datos reales enseguida */
-  else lkCargar();
+  if (enPreview) {
+    lkAplicar(LK_DEF);   /* el panel manda los datos reales enseguida */
+  } else {
+    lkAplicar(LK_DEF);   /* pinta los botones al instante (nunca queda en blanco) */
+    lkCargar();          /* y apenas carga, los reemplaza con lo guardado */
+  }
 </script>
 </body>
 </html>

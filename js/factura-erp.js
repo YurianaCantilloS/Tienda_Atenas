@@ -432,7 +432,10 @@ async function construirFacturaPDF({titulo, fecha, cliente, telefono, metodoPago
   }
 
   const isMobile = window.innerWidth <= 768;
-  const ESCALA = isMobile ? 1.4 : 2;
+  /* En celular html2canvas es lento: escala y compresión más bajas
+     para que la factura salga en segundos y siga viéndose bien. */
+  const ESCALA = isMobile ? 1.1 : 2;
+  const CALIDAD = isMobile ? 0.85 : 0.92;
 
   avisoFactura('Generando factura…', 'ok');
   const logo = await logoMini();
@@ -534,7 +537,7 @@ async function construirFacturaPDF({titulo, fecha, cliente, telefono, metodoPago
     }
     canvases.forEach((canvas, p) => {
       if(p > 0) pdf.addPage();
-      pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 210, 297);
+      pdf.addImage(canvas.toDataURL('image/jpeg', CALIDAD), 'JPEG', 0, 0, 210, 297);
     });
 
     return { blob: pdf.output('blob'), canvases };

@@ -7,6 +7,10 @@ const SUPABASE_KEY = 'sb_publishable_OzxgAMu9ENo_3ASV0xjvag_Cms2VpYr';
 
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* links.html (y otros scripts inline) buscan window.sb: hay que exponerlo,
+   porque un const de ámbito global NO crea propiedad en window. */
+window.sb = sb;
+
 /* Dirección pública de la tienda en Vercel (enlaces compartibles) */
 const SITIO_URL = 'https://tienda-atenas.vercel.app';
 
