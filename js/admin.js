@@ -303,12 +303,29 @@ async function revisarSesion() {
 
 /* ── Navegación ─────────────────────────────── */
 
+const PAGINAS_PRINCIPALES = ['resumen', 'productos', 'pedidos', 'pagina'];
+
+function abrirMenuMovil() {
+  document.body.classList.add('menu-movil-abierto');
+}
+
+function cerrarMenuMovil() {
+  document.body.classList.remove('menu-movil-abierto');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') cerrarMenuMovil();
+});
+
 function irA(pagina) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + pagina).classList.add('active');
   document.querySelectorAll('.nav-item[data-page]').forEach(b => {
     b.classList.toggle('active', b.dataset.page === pagina);
   });
+  const btnMenu = document.querySelector('.barra-movil .nav-menu');
+  if (btnMenu) btnMenu.classList.toggle('active', PAGINAS_PRINCIPALES.indexOf(pagina) === -1);
+  cerrarMenuMovil();
   if (pagina === 'resumen') cargarResumen();
   if (pagina === 'categorias') cargarCategorias();
   if (pagina === 'envios') cargarEnvios();
@@ -876,9 +893,10 @@ async function cambiarEstado(id, estado) {
 
 function marcarBadge() {
   const nuevos = PEDIDOS.filter(p => (p.estado || 'nuevo') === 'nuevo').length;
-  const badge = document.getElementById('badge-pedidos');
-  badge.textContent = nuevos;
-  badge.style.display = nuevos ? '' : 'none';
+  document.querySelectorAll('.js-ped-badge').forEach(badge => {
+    badge.textContent = nuevos;
+    badge.style.display = nuevos ? '' : 'none';
+  });
 }
 
 /* ══════════════════════════════════════════════
