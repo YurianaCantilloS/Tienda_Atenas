@@ -2,12 +2,12 @@
   "rewrites": [
     {
       "source": "/",
-      "has": [{ "type": "host", "value": "admin.tu-dominio.com" }],
+      "has": [{ "type": "host", "value": "admin.atenas-style-shop.com" }],
       "destination": "/admin.html"
     },
     {
       "source": "/",
-      "has": [{ "type": "host", "value": "links.tu-dominio.com" }],
+      "has": [{ "type": "host", "value": "links.tu-atenas-style-shop.com" }],
       "destination": "/links.html"
     }
   ]
