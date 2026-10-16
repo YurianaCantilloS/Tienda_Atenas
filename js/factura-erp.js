@@ -432,10 +432,12 @@ async function construirFacturaPDF({titulo, fecha, cliente, telefono, metodoPago
   }
 
   const isMobile = window.innerWidth <= 768;
-  /* En celular html2canvas es lento: escala y compresión más bajas
-     para que la factura salga en segundos y siga viéndose bien. */
-  const ESCALA = isMobile ? 1.1 : 2;
-  const CALIDAD = isMobile ? 0.85 : 0.92;
+  /* La factura se dibuja como imagen (html2canvas), así que entre más grande
+     el lienzo, más nítida sale al hacer zoom. La hoja mide 210mm (~794px):
+     escala 2.6 en celular ≈ 245 ppp y 3.2 en PC ≈ 300 ppp (calidad de imprenta).
+     Antes 1.1 en celular (≈105 ppp) quedaba borroso al acercar. */
+  const ESCALA = isMobile ? 2.6 : 3.2;
+  const CALIDAD = 0.96;
 
   avisoFactura('Generando factura…', 'ok');
   const logo = await logoMini();
