@@ -7,7 +7,7 @@
     },
     {
       "source": "/",
-      "has": [{ "type": "host", "value": "links.tu-atenas-style-shop.com" }],
+      "has": [{ "type": "host",       "value": "links.atenas-style-shop.com" }],
       "destination": "/links.html"
     }
   ]
