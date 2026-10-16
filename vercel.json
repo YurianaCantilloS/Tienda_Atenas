@@ -1,0 +1,14 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "admin.tu-dominio.com" }],
+      "destination": "/admin.html"
+    },
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "links.tu-dominio.com" }],
+      "destination": "/links.html"
+    }
+  ]
+}
