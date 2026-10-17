@@ -7,8 +7,16 @@
     },
     {
       "source": "/",
-      "has": [{ "type": "host",       "value": "links.atenas-style-shop.com" }],
+      "has": [{ "type": "host", "value": "links.atenas-style-shop.com" }],
       "destination": "/links.html"
+    },
+    {
+      "source": "/",
+      "destination": "/tienda.html"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/tienda.html"
     }
   ]
 }
