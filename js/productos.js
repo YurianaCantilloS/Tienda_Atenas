@@ -36,6 +36,7 @@ async function cargarCategoriasTienda() {
 let PRODUCTOS = [];
 let filtroActivo = 'todos';
 let ordenTienda = 'destacados';   /* lo elige el admin en el panel */
+let productosVisibles = 18;       /* cuántos se muestran antes de "Mostrar más" */
 let textoBusqueda = '';
 let prodModal = null;
 let qtyModal = 1;
@@ -102,6 +103,7 @@ function renderFiltros() {
 
 function filtrar(cat, btn) {
   filtroActivo = cat;
+  productosVisibles = 18;
   document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   renderProductos();
@@ -109,6 +111,7 @@ function filtrar(cat, btn) {
 
 function buscarProductos(texto) {
   textoBusqueda = texto.trim().toLowerCase();
+  productosVisibles = 18;
   renderProductos();
 }
 
@@ -119,12 +122,18 @@ function renderProductos() {
     lista = lista.filter(p => p.nombre.toLowerCase().includes(textoBusqueda));
   }
   lista = ordenarProductos(lista);
+  /* "Mostrar más" solo aplica en celular; en PC se muestran todos */
+  const enCelular = window.innerWidth <= 600;
+  const visibles = enCelular ? lista.slice(0, productosVisibles) : lista;
+  const btnMas = getBtnMostrarMas();
   if (!lista.length) {
     grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--gris-60);grid-column:1/-1;">No hay productos en esta categoría.</div>';
+    if (btnMas) btnMas.style.display = 'none';
     return;
   }
+  if (btnMas) btnMas.style.display = (enCelular && lista.length > visibles.length) ? '' : 'none';
 
-  grid.innerHTML = lista.map(p => {
+  grid.innerHTML = visibles.map(p => {
     const agotado = p.stock === 0;
     const imgHtml = p.foto_url ? `<img src="${p.foto_url}" alt="${p.nombre}">` : svgIconFor(p.categoria);
     const enCarrito = carrito.find(i => i.id === p.id);
@@ -163,6 +172,37 @@ function renderProductos() {
     `;
   }).join('');
 }
+
+/* ── BOTÓN "MOSTRAR MÁS" (12 productos cada vez) ── */
+function getBtnMostrarMas() {
+  let btn = document.getElementById('btn-mostrar-mas');
+  if (!btn) {
+    const grid = document.getElementById('productos-grid');
+    if (!grid || !grid.parentNode) return null;
+    btn = document.createElement('button');
+    btn.id = 'btn-mostrar-mas';
+    btn.className = 'btn-mostrar-mas';
+    btn.textContent = 'Mostrar más';
+    btn.onclick = mostrarMasProductos;
+    grid.parentNode.insertBefore(btn, grid.nextSibling);
+  }
+  return btn;
+}
+
+function mostrarMasProductos() {
+  productosVisibles += 18;
+  renderProductos();
+}
+
+/* Si la persona pasa de celular a PC (o viceversa), se ajusta el paginado */
+let anchoEraCelular = window.innerWidth <= 600;
+window.addEventListener('resize', () => {
+  const ahoraCelular = window.innerWidth <= 600;
+  if (ahoraCelular !== anchoEraCelular) {
+    anchoEraCelular = ahoraCelular;
+    renderProductos();
+  }
+});
 
 function cambiarCantidadCarritoDesdeCard(id, delta) {
   cambiarCantidadCarrito(id, delta);
