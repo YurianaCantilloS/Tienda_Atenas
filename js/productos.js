@@ -36,7 +36,7 @@ async function cargarCategoriasTienda() {
 let PRODUCTOS = [];
 let filtroActivo = 'todos';
 let ordenTienda = 'destacados';   /* lo elige el admin en el panel */
-let productosVisibles = 18;       /* cuántos se muestran antes de "Mostrar más" */
+let productosVisibles = 22;       /* cuántos se muestran antes de "Mostrar más" */
 let textoBusqueda = '';
 let prodModal = null;
 let qtyModal = 1;
@@ -103,7 +103,7 @@ function renderFiltros() {
 
 function filtrar(cat, btn) {
   filtroActivo = cat;
-  productosVisibles = 18;
+  productosVisibles = 22;
   document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   renderProductos();
@@ -111,7 +111,7 @@ function filtrar(cat, btn) {
 
 function buscarProductos(texto) {
   textoBusqueda = texto.trim().toLowerCase();
-  productosVisibles = 18;
+  productosVisibles = 22;
   renderProductos();
 }
 
@@ -190,7 +190,7 @@ function getBtnMostrarMas() {
 }
 
 function mostrarMasProductos() {
-  productosVisibles += 18;
+  productosVisibles += 22;
   renderProductos();
 }
 

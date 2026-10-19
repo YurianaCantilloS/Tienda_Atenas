@@ -65,7 +65,7 @@
   .productos-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 12px; }
 }
 
-/* BOTÓN "MOSTRAR MÁS" (muestra los productos de 18 en 18) */
+/* BOTÓN "MOSTRAR MÁS" (muestra los productos de 22 en 22) */
 .btn-mostrar-mas {
   display: block;
   margin: 0 auto 32px;

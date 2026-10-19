@@ -90,11 +90,51 @@ async function fetchCiudades() {
 }
 
 /* Guarda el pedido en la tabla "pedidos" para que aparezca en el panel.
-   Si la tabla todavía no existe, el pedido igual se manda por WhatsApp:
-   nunca dejamos de cobrar por un error de la base de datos. */
+   IMPORTANTE: la tabla solo deja LEER al admin (ver sql/panel-admin.sql),
+   así que NO se puede pedir la fila de vuelta con .select(): Supabase
+   cancelaría el insert completo del cliente (error de política RLS).
+   Para conservar el número real de pedido (ATH-1001, ATH-1002, ...) se usa
+   la función "crear_pedido" de sql/guardar-pedido.sql, que guarda y devuelve
+   el número. Si esa función todavía no se ha creado, se guarda igual con un
+   número de respaldo: el pedido nunca deja de llegar por WhatsApp. */
 async function guardarPedido(datos, items, totales, extra = {}) {
+  const productos = items.map(i => ({
+    id: i.id,
+    nombre: i.nombre,
+    categoria: i.categoria,
+    precio: Number(i.precio),
+    cantidad: i.cantidad
+  }));
+
+  /* Camino recomendado: la función de la base guarda y devuelve el número. */
   try {
-    const { data, error } = await sb.from('pedidos').insert({
+    const { data, error } = await sb.rpc('crear_pedido', {
+      p_cliente: datos.nombreCompleto,
+      p_telefono: datos.tel,
+      p_cedula: datos.cedula || null,
+      p_ciudad: datos.ciudad,
+      p_barrio: datos.barrio || null,
+      p_direccion: datos.direccion,
+      p_referencia: datos.referencia || null,
+      p_metodo_pago: extra.metodoPago,
+      p_productos: productos,
+      p_subtotal: totales.subtotal,
+      p_descuento: totales.descuento,
+      p_domicilio: totales.domicilio,
+      p_total: totales.total
+    });
+    if (!error) return data || null;
+    const noExiste = /PGRST202|could not find|schema cache|does not exist/i.test(error.message || '');
+    if (!noExiste) { console.warn('El pedido no se guardó en el panel:', error.message); return null; }
+  } catch (e) {
+    /* la función no está todavía: seguimos con el respaldo */
+  }
+
+  /* Respaldo: insert directo, sin pedir la fila de vuelta (solo números). */
+  const codigo = 'ATH-' + String(Date.now()).slice(-7);
+  try {
+    const { error } = await sb.from('pedidos').insert({
+      codigo,
       cliente: datos.nombreCompleto,
       telefono: datos.tel,
       cedula: datos.cedula || null,
@@ -103,21 +143,15 @@ async function guardarPedido(datos, items, totales, extra = {}) {
       direccion: datos.direccion,
       referencia: datos.referencia || null,
       metodo_pago: extra.metodoPago,
-      productos: items.map(i => ({
-        id: i.id,
-        nombre: i.nombre,
-        categoria: i.categoria,
-        precio: Number(i.precio),
-        cantidad: i.cantidad
-      })),
+      productos,
       subtotal: totales.subtotal,
       descuento: totales.descuento,
       domicilio: totales.domicilio,
       total: totales.total
-    }).select('codigo').single();
+    });
 
     if (error) { console.warn('El pedido no se guardó en el panel:', error.message); return null; }
-    return data?.codigo || null;
+    return codigo;
   } catch (e) {
     console.warn('El pedido no se guardó en el panel:', e);
     return null;
