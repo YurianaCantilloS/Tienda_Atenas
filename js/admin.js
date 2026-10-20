@@ -2079,16 +2079,54 @@ async function cargarEnvios() {
   renderCiudadesAdmin();
 }
 
+/* ── Buscador de barrios y de ciudades ── */
+let busqBarrios = '';
+let busqCiudades = '';
+
+function normZona(t) {
+  return String(t || '').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .trim();
+}
+
+function buscarZona(tipo) {
+  const esBarrio = tipo === 'barrio';
+  const inp = document.getElementById(esBarrio ? 'buscar-barrio' : 'buscar-ciudad');
+  if (esBarrio) busqBarrios = inp ? inp.value : '';
+  else busqCiudades = inp ? inp.value : '';
+  if (esBarrio) renderBarriosAdmin(); else renderCiudadesAdmin();
+}
+
+function limpiarBusqueda(tipo, enfocar = true) {
+  const esBarrio = tipo === 'barrio';
+  const inp = document.getElementById(esBarrio ? 'buscar-barrio' : 'buscar-ciudad');
+  if (inp) inp.value = '';
+  buscarZona(tipo);
+  if (enfocar && inp) inp.focus();
+}
+
+function vacioBusqueda(txt, tipo) {
+  return `<div class="envios-vacio">No se encontró nada con <b>${esc(txt)}</b>.
+    <button class="envios-limpiar" onclick="limpiarBusqueda('${tipo}')">Limpiar búsqueda</button></div>`;
+}
+
 function renderBarriosAdmin() {
   const cont = document.getElementById('lista-barrios');
   const n = document.getElementById('envios-n-barrios');
-  if (n) n.textContent = BARRIOS_ADMIN.length ? `(${BARRIOS_ADMIN.length})` : '';
+  const q = normZona(busqBarrios);
+  const lista = q ? BARRIOS_ADMIN.filter(b => normZona(b.nombre).includes(q)) : BARRIOS_ADMIN;
+  if (n) {
+    n.textContent = !BARRIOS_ADMIN.length ? ''
+      : q ? `(${lista.length} de ${BARRIOS_ADMIN.length})`
+          : `(${BARRIOS_ADMIN.length})`;
+  }
   if (!cont) return;
   if (!BARRIOS_ADMIN.length) {
     cont.innerHTML = '<div class="envios-vacio">Todavía no hay barrios.</div>';
     return;
   }
-  cont.innerHTML = BARRIOS_ADMIN.map(b => `
+  if (!lista.length) { cont.innerHTML = vacioBusqueda(busqBarrios, 'barrio'); return; }
+  cont.innerHTML = lista.map(b => `
     <div class="envios-row">
       <div class="envios-row-info">
         <span class="envios-nombre">${esc(b.nombre)}</span>
@@ -2104,13 +2142,23 @@ function renderBarriosAdmin() {
 function renderCiudadesAdmin() {
   const cont = document.getElementById('lista-ciudades');
   const n = document.getElementById('envios-n-ciudades');
-  if (n) n.textContent = CIUDADES_ADMIN.length ? `(${CIUDADES_ADMIN.length})` : '';
+  const q = normZona(busqCiudades);
+  const lista = q
+    ? CIUDADES_ADMIN.filter(c =>
+        normZona(c.nombre).includes(q) || normZona(c.departamento).includes(q))
+    : CIUDADES_ADMIN;
+  if (n) {
+    n.textContent = !CIUDADES_ADMIN.length ? ''
+      : q ? `(${lista.length} de ${CIUDADES_ADMIN.length})`
+          : `(${CIUDADES_ADMIN.length})`;
+  }
   if (!cont) return;
   if (!CIUDADES_ADMIN.length) {
     cont.innerHTML = '<div class="envios-vacio">Todavía no hay ciudades.</div>';
     return;
   }
-  cont.innerHTML = CIUDADES_ADMIN.map(c => `
+  if (!lista.length) { cont.innerHTML = vacioBusqueda(busqCiudades, 'ciudad'); return; }
+  cont.innerHTML = lista.map(c => `
     <div class="envios-row">
       <div class="envios-row-info">
         <span class="envios-nombre">${esc(c.nombre)}</span>
@@ -2132,7 +2180,13 @@ async function guardarEnvios(promesa, msgOk) {
   const { data, error } = await promesa.select('id');
   if (error) {
     avisoEnviosFalta();
-    aviso('No se pudo guardar: ' + (error.message || 'error'), 'error');
+    let msg = 'No se pudo guardar: ' + (error.message || 'error');
+    if (error.code === '23505') {
+      msg = /pkey|_id_key|_id_1/i.test(error.message || '')
+        ? 'No se pudo guardar: los ids están desincronizados. Corre sql/arreglar-ids-zonas.sql en Supabase.'
+        : 'Ya existe una zona con ese nombre.';
+    }
+    aviso(msg, 'error');
     return false;
   }
   if (!data || !data.length) {
@@ -2155,6 +2209,7 @@ function abrirZona(tipo, id) {
 
   document.getElementById('zona-tipo').value = tipo;
   document.getElementById('zona-id').value = id || '';
+  if (!id) limpiarBusqueda(tipo, false);
 
   const nombre = document.getElementById('zona-nombre');
   const extra = document.getElementById('zona-extra');

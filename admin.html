@@ -325,6 +325,10 @@
             <button class="btn btn-primario btn-mini" onclick="abrirZona('barrio')">+ Agregar</button>
           </div>
           <p class="envios-sub">Ajusta el valor del domicilio de cada barrio.</p>
+          <div class="search-box envios-buscar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="buscar-barrio" placeholder="Buscar barrio..." oninput="buscarZona('barrio')">
+          </div>
           <div id="lista-barrios" class="envios-lista"></div>
         </div>
 
@@ -334,6 +338,10 @@
             <button class="btn btn-primario btn-mini" onclick="abrirZona('ciudad')">+ Agregar</button>
           </div>
           <p class="envios-sub">Ciudades y municipios fuera de Cartagena. El envío se cotiza aparte.</p>
+          <div class="search-box envios-buscar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input type="text" id="buscar-ciudad" placeholder="Buscar ciudad..." oninput="buscarZona('ciudad')">
+          </div>
           <div id="lista-ciudades" class="envios-lista"></div>
         </div>
       </div>

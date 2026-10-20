@@ -1404,6 +1404,15 @@ body.menu-movil-abierto .menu-overlay { display: block; opacity: 1; }
 .envios-card-head h3 { margin: 0; }
 .envios-card-head .btn-mini { flex-shrink: 0; }
 
+.envios-buscar { width: 100%; min-width: 0; flex: none; margin: -4px 0 12px; }
+.envios-buscar input { padding-top: 9px; padding-bottom: 9px; }
+.envios-limpiar {
+  border: none; background: none; padding: 0; margin-left: 4px;
+  font: inherit; font-weight: 700; color: var(--lila);
+  text-decoration: underline; cursor: pointer;
+}
+.envios-limpiar:hover { opacity: .75; }
+
 .envios-lista {
   max-height: 460px; overflow-y: auto;
   display: flex; flex-direction: column; gap: 8px;
